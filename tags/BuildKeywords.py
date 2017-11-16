@@ -8,7 +8,7 @@ from collections import Counter
 #
 # for each document, split text into 1-, 2-, 3-grams using stopwords and punctuation to separate phrases
 # add each ngram to keyword list if it is present in the master keyword list allKwds
-def buildKeywords(df, blacklist, whitelist, addFromText=True, enhance=True):
+def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', addFromText=True, enhance=True):
     def addTextKeywords(df, allKwds):
         stopwords = set(['a', 'the', 'this', 'that', 'and', 'or', 'of', 'not',
                          'is', 'in', 'it', 'its', 'but', 'what', 'with'])
@@ -80,7 +80,7 @@ def buildKeywords(df, blacklist, whitelist, addFromText=True, enhance=True):
         return enhancedKwds
 
     # get a list of all keywords
-    kwds = df['keywords'].str.split('|')
+    kwds = df[kwAttr].str.split('|')
     kwds = kwds.apply(lambda x: [s.strip() for s in x if len(s) > 2])   # only keep kwds with 3 or more characters
     kwds = kwds.apply(lambda x: [s for s in x if s not in blacklist])   # only keep keywords not in blacklist
     kwds = kwds.apply(lambda x: [s.lower() for s in x]) # make all lower case
