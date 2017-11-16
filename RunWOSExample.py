@@ -8,7 +8,7 @@ from WOSTags.MergeWOSFiles import mergeWOSFiles
 from WOSTags.ProcessReferences import processRawWoSData
 from WOSTags.ProcessReferences import filterDocuments
 from WOSTags.BuildKeywords import buildKeywords
-from Network.BuildNetwork import buildDocumentNetwork
+from Network.BuildNetwork import buildKeywordNetwork
 
 dropCols = ['text', 'AuKeywords', 'KeywordsPlus', 'keywords']
 
@@ -29,7 +29,7 @@ whitelist = set([])
 
 fname = os.path.join(datapath, namebase+"Final.txt")
 
-# too many documents - get rid of some of them
+# too many documents - keep a fraction of them by year and citation rate
 df = filterDocuments(fname, 0.9)
 
 # set up output file names
@@ -40,4 +40,4 @@ edgesname = os.path.join(datapath, namebase+"Edges.csv")
 # build the keywords, add to df
 kwAttr = buildKeywords(df, blacklist, whitelist)
 # build network linked by keyword similarity
-buildDocumentNetwork(df, kwAttr, dropCols=dropCols, outname=nwname, nodesname=nodesname, edgesname=edgesname, doLayout=True)
+buildKeywordNetwork(df, kwAttr, dropCols=dropCols, outname=nwname, nodesname=nodesname, edgesname=edgesname, doLayout=True)

@@ -115,7 +115,7 @@ def buildClusterNames(df, allKwHist, kwAttr, clAttr='Cluster', wtd=True):
         print("Cluster %s, %d nodes, name: %s"%info)
 
 # build network, linking based on common keywords, keyword lists in column named kwAttr
-def buildDocumentNetwork(df, kwAttr='eKwds', dropCols=[], outname=None, nodesname=None, edgesname=None, idf=True, toFile=True, doLayout=True):
+def buildKeywordNetwork(df, kwAttr='eKwds', dropCols=[], outname=None, nodesname=None, edgesname=None, idf=True, toFile=True, doLayout=True):
     print("Building document network")
 
     kwHist = dict([item for item in Counter([k for kwList in df[kwAttr] for k in kwList]).most_common() if item[1] > 1])

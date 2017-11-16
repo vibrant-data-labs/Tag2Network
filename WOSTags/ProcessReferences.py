@@ -232,7 +232,7 @@ def processRawWoSData(path, namebase):
 
     processWoSData(dataFile, False)
 
-# keep a fraction of documents
+# keep a fraction of documents by year and citation rate
 # sort by publication year and citation count
 # then iterate through each year keeping documents in each year with most citations
 def filterDocuments(fname, keepFrac):
