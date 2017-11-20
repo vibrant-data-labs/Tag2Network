@@ -8,7 +8,8 @@ from collections import Counter
 #
 # for each document, split text into 1-, 2-, 3-grams using stopwords and punctuation to separate phrases
 # add each ngram to keyword list if it is present in the master keyword list allKwds
-def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', addFromText=True, enhance=True):
+# syndic is a synonym dictionary {synonym:commonTerm} pairs
+def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', syndic=None, addFromText=True, enhance=True):
     def addTextKeywords(df, allKwds):
         stopwords = set(['a', 'the', 'this', 'that', 'and', 'or', 'of', 'not',
                          'is', 'in', 'it', 'its', 'but', 'what', 'with'])
