@@ -83,7 +83,7 @@ def buildClusterNames(df, allKwHist, kwAttr, clAttr='Cluster', wtd=True):
     allFreq = dict(zip(allKwHist.keys(), allVals/allVals.sum()))
     #clusters = df['clusId'].unique()
     clusters = df[clAttr].unique()
-    df['cluster'] = ''
+    df['cluster_name'] = ''
     clusInfo = []
     for clus in clusters:
         clusRows = df[clAttr] == clus
@@ -108,7 +108,7 @@ def buildClusterNames(df, allKwHist, kwAttr, clAttr='Cluster', wtd=True):
             topKw = [k for k in topKw if k not in removeKw]
             # build and store name
             clName = ', '.join(topKw[:5])
-            df.cluster[clusRows] = clName
+            df.cluster_name[clusRows] = clName
             clusInfo.append((clus, nRows, clName))
     clusInfo.sort(key=lambda x: x[1], reverse=True)
     for info in clusInfo:
@@ -117,7 +117,6 @@ def buildClusterNames(df, allKwHist, kwAttr, clAttr='Cluster', wtd=True):
 # build network, linking based on common keywords, keyword lists in column named kwAttr
 def buildKeywordNetwork(df, kwAttr='eKwds', dropCols=[], outname=None, nodesname=None, edgesname=None, idf=True, toFile=True, doLayout=True):
     print("Building document network")
-
     kwHist = dict([item for item in Counter([k for kwList in df[kwAttr] for k in kwList]).most_common() if item[1] > 1])
     # build document-keywords feature matrix
     features = buildFeatures(df, kwHist, idf, kwAttr)
@@ -168,7 +167,7 @@ def buildNetworkX(linksdf, id1='Source', id2='Target', directed=False):
 # add a computed network attribute to the node attribute table
 #
 def addAttr(nodesdf, attr, vals):
-    nodesdf[attr] = nodesdf['name'].map(vals)
+    nodesdf[attr] = nodesdf['id'].map(vals)
 
 # add network structural attributes to nodesdf
 # clusVar is the attribute to use for computing bridging etc
@@ -184,7 +183,7 @@ def addNetworkAttributes(nodesdf, linksdf=None, nw=None, groupVars=["Cluster"], 
     # add bridging, cluster centrality etc. for one or more grouping variables
     for groupVar in groupVars:
         if len(nx.get_node_attributes(nw, groupVar)) == 0:
-            vals = {k:v for k,v in dict(zip(nodesdf['name'], nodesdf[groupVar])).iteritems() if k in nw}
+            vals = {k:v for k,v in dict(zip(nodesdf['id'], nodesdf[groupVar])).iteritems() if k in nw}
             nx.set_node_attributes(nw, groupVar, vals)
         grpprop = cp.basicClusteringProperties(nw, groupVar)
         for prop, vals in grpprop.iteritems():
@@ -193,14 +192,7 @@ def addNetworkAttributes(nodesdf, linksdf=None, nw=None, groupVars=["Cluster"], 
 # compute and add Louvain clusters to node dataframe
 def addLouvainClusters(nodesdf, linksdf=None, nw=None, clusterLevel=0):
     def mergePartitionData(g, p, name):
-        vals = {}
-        for node, data in g.nodes_iter(data=True):
-            if node in p:
-                lVal = name + '_' + str(p[node])
-                vals[name] = lVal
-            else:
-                vals[name] = None
-        return vals
+        return {node: (name + '_' + str(p[node]) if node in p else None) for node in g.nodes_iter()}
 
     def getPartitioning(i, g, dendo, clusterings):
         p = partition_at_level(dendo, len(dendo) - 1 - i)

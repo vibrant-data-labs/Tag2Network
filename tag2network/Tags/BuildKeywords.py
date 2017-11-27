@@ -9,7 +9,7 @@ from collections import Counter
 # for each document, split text into 1-, 2-, 3-grams using stopwords and punctuation to separate phrases
 # add each ngram to keyword list if it is present in the master keyword list allKwds
 # syndic is a synonym dictionary {synonym:commonTerm} pairs
-def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', syndic=None, addFromText=True, enhance=True):
+def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', syndic=None, addFromText=True, enhance=True):
     def addTextKeywords(df, allKwds):
         stopwords = set(['a', 'the', 'this', 'that', 'and', 'or', 'of', 'not',
                          'is', 'in', 'it', 'its', 'but', 'what', 'with'])
@@ -51,7 +51,7 @@ def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', syndic=None, addF
             return ngrams
 
         print ("getting ngrams from text")
-        textngrams = df.text.apply(lambda x: getNGrams(x))  #get 2-, 3-grams out of text
+        textngrams = df[txtAttr].apply(lambda x: getNGrams(x))  #get 2-, 3-grams out of text
         print ("matching text ngrams to master keyword list to get text keywords")
         textkwds = textngrams.apply(lambda x: findKeywords(x)) #add as keywords if in master list
         newkwds = df.kwds + textkwds  #add ngrams from text if in master kwd list
