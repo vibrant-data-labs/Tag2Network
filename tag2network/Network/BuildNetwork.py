@@ -11,6 +11,7 @@ import networkx as nx
 import ClusteringProperties as cp
 from louvain import generate_dendrogram
 from louvain import partition_at_level
+from tSNELayout import runTSNELayout
 
 # build sparse feature matrix with optional idf weighting
 # each row is a document, each column is a keyword
@@ -221,6 +222,7 @@ def addLayout(nodesdf, linksdf=None, nw=None):
     print("Running graph layout")
     if nw is None:
         nw = buildNetworkX(linksdf)
-    layout = nx.spring_layout(nw, iterations=25)
+    layout = runTSNELayout(nw)
+    #layout = nx.spring_layout(nw, iterations=25)
     nodesdf['x'] = nodesdf['id'].apply(lambda x: layout[x][0] if x in layout else 0.0)
     nodesdf['y'] = nodesdf['id'].apply(lambda x: layout[x][1] if x in layout else 0.0)
