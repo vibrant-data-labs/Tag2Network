@@ -9,39 +9,41 @@ from scipy.sparse import csr_matrix
 
 import networkx as nx
 import ClusteringProperties as cp
+from DrawNetwork import draw_network_categorical
 from louvain import generate_dendrogram
 from louvain import partition_at_level
 from tSNELayout import runTSNELayout
 
 # build sparse feature matrix with optional idf weighting
-# each row is a document, each column is a keyword
+# each row is a document, each column is a tag
 # weighting assumes each term occurs once in each doc it appears in
-def buildFeatures(df, kwHist, idf, kwAttr):
-    allKwds = kwHist.keys()
-    # build kw-index mapping
-    kwIdx = dict(zip(allKwds, xrange(len(allKwds))))
+def buildFeatures(df, tagHist, idf, tagAttr):
+    allTags = tagHist.keys()
+    # build tag-index mapping
+    tagIdx = dict(zip(allTags, xrange(len(allTags))))
     # build feature matrix
     print("Build feature matrix")
     nDoc = len(df)
-    features = dok_matrix((nDoc, len(kwIdx)), dtype=float)
+    features = dok_matrix((nDoc, len(tagIdx)), dtype=float)
     row = 0
-    for kwList in df[kwAttr]:
-        kwList = [k for k in kwList if k in kwIdx]
-        if len(kwList) > 0:
-            for kwd in kwList:
+    for tagList in df[tagAttr]:
+        tagList = [k for k in tagList if k in tagIdx]
+        if len(tagList) > 0:
+            for tag in tagList:
                 if idf:
-                    docFreq = kwHist[kwd]
-                    features[row, kwIdx[kwd]] = math.log(nDoc/float(docFreq), 2.0)
+                    docFreq = tagHist[tag]
+                    features[row, tagIdx[tag]] = math.log(nDoc/float(docFreq), 2.0)
                 else:
-                    features[row, kwIdx[kwd]] = 1.0
+                    features[row, tagIdx[tag]] = 1.0
         else:
-            print("Document with no extended keywords")
+            print("Document with no tags (%s)"%tagAttr)
         row += 1
     return csr_matrix(features)
 
 # compute cosine similarity
 # f is a (sparse) feature matrix
 def simCosine(f):
+    # compute feature matrix dot product
     fdot = np.array(f.dot(f.T).todense())
     # get inverse feature vector magnitudes
     invMag = np.sqrt(np.array(1.0/np.diag(fdot)))
@@ -49,7 +51,6 @@ def simCosine(f):
     invMag[np.isinf(invMag)] = 0
     # get cosine sim by elementwise multiply by inverse magnitudes
     sim = (fdot * invMag).T * invMag
-    np.fill_diagonal(sim, 0)
     return sim
 
 def threshold(sim, linksPer=4):
@@ -79,9 +80,9 @@ def threshold(sim, linksPer=4):
 
 # build cluster name based on keywords that occur commonly in the cluster
 # if wtd, then weigh keywords based on local frequency relative to global freq
-def buildClusterNames(df, allKwHist, kwAttr, clAttr='Cluster', wtd=True):
-    allVals = np.array(allKwHist.values(), dtype=float)
-    allFreq = dict(zip(allKwHist.keys(), allVals/allVals.sum()))
+def buildClusterNames(df, allTagHist, tagAttr, clAttr='Cluster', wtd=True):
+    allVals = np.array(allTagHist.values(), dtype=float)
+    allFreq = dict(zip(allTagHist.keys(), allVals/allVals.sum()))
     #clusters = df['clusId'].unique()
     clusters = df[clAttr].unique()
     df['cluster_name'] = ''
@@ -90,44 +91,48 @@ def buildClusterNames(df, allKwHist, kwAttr, clAttr='Cluster', wtd=True):
         clusRows = df[clAttr] == clus
         nRows = clusRows.sum()
         if nRows > 0:
-            kwHist = Counter([k for kwList in df[kwAttr][clusRows] for k in kwList if k in allKwHist])
+            tagHist = Counter([k for tagList in df[tagAttr][clusRows] for k in tagList if k in allTagHist])
             if wtd:
-                vals = np.array(kwHist.values(), dtype=float)
-                freq = dict(zip(kwHist.keys(), vals/vals.sum()))
-                wtdKw = [(item[0], item[1]*math.sqrt(freq[item[0]]/allFreq[item[0]])) for item in kwHist.most_common()]
-                wtdKw.sort(key=lambda x: x[1], reverse=True)
-                topKw = [item[0] for item in wtdKw[:10]]
+                vals = np.array(tagHist.values(), dtype=float)
+                freq = dict(zip(tagHist.keys(), vals/vals.sum()))
+                wtdTag = [(item[0], item[1]*math.sqrt(freq[item[0]]/allFreq[item[0]])) for item in tagHist.most_common()]
+                wtdTag.sort(key=lambda x: x[1], reverse=True)
+                topTag = [item[0] for item in wtdTag[:10]]
             else:
-                topKw = [item[0] for item in kwHist.most_common()][:10]
+                topTag = [item[0] for item in tagHist.most_common()][:10]
             # remove unigrams that make up n-grams with n > 1
-            topSet = set(topKw)
-            removeKw = set()
-            for kw in topKw:
-                kws = kw.split(' ')
-                if len(kws) > 1 and all(k in topSet for k in kws):
-                    removeKw.update(kws)
-            topKw = [k for k in topKw if k not in removeKw]
+            topSet = set(topTag)
+            removeTag = set()
+            for tag in topTag:
+                tags = tag.split(' ')
+                if len(tags) > 1 and all(k in topSet for k in tags):
+                    removeTag.update(tags)
+            topTag = [k for k in topTag if k not in removeTag]
             # build and store name
-            clName = ', '.join(topKw[:5])
-            df.cluster_name[clusRows] = clName
+            clName = ', '.join(topTag[:5])
+            df.loc[clusRows,'cluster_name'] = clName
             clusInfo.append((clus, nRows, clName))
     clusInfo.sort(key=lambda x: x[1], reverse=True)
     for info in clusInfo:
         print("Cluster %s, %d nodes, name: %s"%info)
 
-# build network, linking based on common keywords, keyword lists in column named kwAttr
-def buildKeywordNetwork(df, kwAttr='eKwds', dropCols=[], outname=None, nodesname=None, edgesname=None, idf=True, toFile=True, doLayout=True):
+# build network, linking based on common tags, tag lists in column named tagAttr
+def buildTagNetwork(df, tagAttr='eKwds', dropCols=[], outname=None,
+                        nodesname=None, edgesname=None, plotname=None, idf=True,
+                        toFile=True, doLayout=True, draw=False):
     print("Building document network")
-    kwHist = dict([item for item in Counter([k for kwList in df[kwAttr] for k in kwList]).most_common() if item[1] > 1])
+    tagHist = dict([item for item in Counter([k for kwList in df[tagAttr] for k in kwList]).most_common() if item[1] > 1])
     # build document-keywords feature matrix
-    features = buildFeatures(df, kwHist, idf, kwAttr)
+    features = buildFeatures(df, tagHist, idf, tagAttr)
     # compute similarity
     print("Compute similarity")
     sim = simCosine(features)
+    # avoid self-links
+    np.fill_diagonal(sim, 0)
     # threshold
     print("Threshold similarity")
     sim = threshold(sim)
-    # make edge dataframe and clean up node dataframe
+    # make edge dataframe
     edgedf = simMatToLinkDataFrame(sim)
     df['id'] = range(len(df))
     df.drop(dropCols, axis=1, inplace=True)
@@ -135,9 +140,11 @@ def buildKeywordNetwork(df, kwAttr='eKwds', dropCols=[], outname=None, nodesname
     nw = buildNetworkX(edgedf)
     addLouvainClusters(df, nw=nw)
     addNetworkAttributes(df, nw=nw)
-    buildClusterNames(df, kwHist, kwAttr)
+    buildClusterNames(df, tagHist, tagAttr)
     if doLayout:
-        addLayout(df, nw=nw)
+        layout = add_layout(df, nw=nw)
+        if draw:
+            draw_network_categorical(nw, df, layout, plotfilename=plotname)
 
     if toFile:
         # output to xlsx
@@ -167,7 +174,7 @@ def buildNetworkX(linksdf, id1='Source', id2='Target', directed=False):
 
 # add a computed network attribute to the node attribute table
 #
-def addAttr(nodesdf, attr, vals):
+def _add_attr(nodesdf, attr, vals):
     nodesdf[attr] = nodesdf['id'].map(vals)
 
 # add network structural attributes to nodesdf
@@ -176,24 +183,24 @@ def addNetworkAttributes(nodesdf, linksdf=None, nw=None, groupVars=["Cluster"], 
     if nw is None:
         nw = buildNetworkX(linksdf)
     if isDirected:
-        addAttr(nodesdf, "InDegree", nw.in_degree())
-        addAttr(nodesdf, "OutDegree", nw.out_degree())
+        _add_attr(nodesdf, "InDegree", dict(nw.in_degree()))
+        _add_attr(nodesdf, "OutDegree", dict(nw.out_degree()))
     else:
-        addAttr(nodesdf, "Degree", nw.degree())
+        _add_attr(nodesdf, "Degree", dict(nw.degree()))
 
     # add bridging, cluster centrality etc. for one or more grouping variables
     for groupVar in groupVars:
         if len(nx.get_node_attributes(nw, groupVar)) == 0:
             vals = {k:v for k,v in dict(zip(nodesdf['id'], nodesdf[groupVar])).iteritems() if k in nw}
-            nx.set_node_attributes(nw, groupVar, vals)
+            nx.set_node_attributes(nw, vals, groupVar)
         grpprop = cp.basicClusteringProperties(nw, groupVar)
         for prop, vals in grpprop.iteritems():
-            addAttr(nodesdf, prop, vals)
+            _add_attr(nodesdf, prop, vals)
 
 # compute and add Louvain clusters to node dataframe
 def addLouvainClusters(nodesdf, linksdf=None, nw=None, clusterLevel=0):
     def mergePartitionData(g, p, name):
-        return {node: (name + '_' + str(p[node]) if node in p else None) for node in g.nodes_iter()}
+        return {node: (name + '_' + str(p[node]) if node in p else None) for node in g.nodes()}
 
     def getPartitioning(i, g, dendo, clusterings):
         p = partition_at_level(dendo, len(dendo) - 1 - i)
@@ -216,13 +223,15 @@ def addLouvainClusters(nodesdf, linksdf=None, nw=None, clusterLevel=0):
     getPartitioning(depth, gg, dendo, clusterings)
     # add cluster attr to dataframe
     for grp, vals in clusterings.iteritems():
-        addAttr(nodesdf, grp, vals)
+        _add_attr(nodesdf, grp, vals)
 
-def addLayout(nodesdf, linksdf=None, nw=None):
+def add_layout(nodesdf, linksdf=None, nw=None):
     print("Running graph layout")
     if nw is None:
         nw = buildNetworkX(linksdf)
-    layout = runTSNELayout(nw)
+    layout, _ = runTSNELayout(nw)
     #layout = nx.spring_layout(nw, iterations=25)
     nodesdf['x'] = nodesdf['id'].apply(lambda x: layout[x][0] if x in layout else 0.0)
     nodesdf['y'] = nodesdf['id'].apply(lambda x: layout[x][1] if x in layout else 0.0)
+    return layout
+

@@ -38,7 +38,7 @@ def basicClusteringProperties(network, clustering):
             degree = float(network.degree(node))
 
             # walk neighbors and save cluster info
-            for neighbor in network.neighbors_iter(node):
+            for neighbor in network.neighbors(node):
                 neighborCluster = network.node[neighbor][clustering]
                 if neighborCluster not in clusterCounts:
                     clusterCounts[neighborCluster] = 0.0

@@ -8,7 +8,7 @@ from WOSTags.MergeWOSFiles import mergeWOSFiles
 from WOSTags.ProcessReferences import processRawWoSData
 from WOSTags.ProcessReferences import filterDocuments
 from Tags.BuildKeywords import buildKeywords
-from Network.BuildNetwork import buildKeywordNetwork
+from Network.BuildNetwork import buildTagNetwork
 
 # columns to delete in the output
 dropCols = ['text', 'AuKeywords', 'KeywordsPlus', 'keywords']
@@ -38,9 +38,12 @@ df = filterDocuments(fname, 0.5)    # for debugging so it runs faster
 nwname = os.path.join(datapath, namebase+".xlsx")
 nodesname = os.path.join(datapath, namebase+"Nodes.csv")
 edgesname = os.path.join(datapath, namebase+"Edges.csv")
+plotname = os.path.join(datapath, namebase+"Plot.pdf")
 
 # build and enhance the keywords, add to df
 kwAttr = buildKeywords(df, blacklist, whitelist)
 
 # build network linked by keyword similarity
-buildKeywordNetwork(df, kwAttr, dropCols=dropCols, outname=nwname, nodesname=nodesname, edgesname=edgesname, doLayout=True)
+buildTagNetwork(df, kwAttr, dropCols=dropCols, outname=nwname,
+                    nodesname=nodesname, edgesname=edgesname, plotname=plotname,
+                    doLayout=True, draw=True)
