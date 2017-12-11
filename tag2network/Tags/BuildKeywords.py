@@ -97,6 +97,8 @@ def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', s
     if addFromText:
         #add ngrams from title and abstract if they are in the master keyword list
         masterKwds = set(kwHist.keys()).union(whitelist)
+        if syndic:
+            masterKwds.update(syndic.keys(), syndic.values())
         print("adding new keywords to docs if they occur in the text (title+abstract)")
         newkwds = addTextKeywords(df, masterKwds)
         df['newKwds'] = newkwds
