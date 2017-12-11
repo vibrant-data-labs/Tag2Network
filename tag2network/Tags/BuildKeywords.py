@@ -3,11 +3,13 @@
 import re
 from collections import Counter
 
-# build keywords from Web of Science data
+# build keywords dataset with keywords and a block of text
 # blacklist and whitelist are both sets
-#
+# kwAttr is a string of | separated keywords
 # for each document, split text into 1-, 2-, 3-grams using stopwords and punctuation to separate phrases
-# add each ngram to keyword list if it is present in the master keyword list allKwds
+# add each ngram to keyword list if it is present in the master keyword list
+# the master keyword list is all keywords from kwAttr plus the whitelist
+# "enhance" # splits multi-word keywords and adds sub-keywords if in the master keyword list
 # syndic is a synonym dictionary {synonym:commonTerm} pairs
 def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', syndic=None, addFromText=True, enhance=True):
     def addTextKeywords(df, allKwds):
@@ -72,7 +74,7 @@ def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', s
                 if kw in allKwds:
                     newKwds.add(' '.join(kwdStr))
         enhancedKwds = []
-        for kwds in df['nKwds']:
+        for kwds in df['newKwds']:
             newKwds = set()
             for kwd in kwds:
                 newKwds.add(kwd)
@@ -86,7 +88,7 @@ def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', s
     kwds = kwds.apply(lambda x: [s for s in x if s not in blacklist])   # only keep keywords not in blacklist
     kwds = kwds.apply(lambda x: [s.lower() for s in x]) # make all lower case
     kwds = kwds.apply(lambda x: list(set(x))) # make sure keywords are unique
-    df['kwds'] = kwds # each row is a list of keywords
+    df['kwds'] = kwds # each value is a list of keywords
 
     # build keyword histogram for keywords (that occur twice or more)
     kwHist = dict([item for item in Counter([k for kwList in kwds for k in kwList]).most_common() if item[1] > 1])
@@ -97,23 +99,27 @@ def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', s
         masterKwds = set(kwHist.keys()).union(whitelist)
         print("adding new keywords to docs if they occur in the text (title+abstract)")
         newkwds = addTextKeywords(df, masterKwds)
-        df['nKwds'] = newkwds
+        df['newKwds'] = newkwds
         nKwHist = dict([item for item in Counter([k for kwList in newkwds for k in kwList]).most_common() if item[1] > 1])
         print("%d New Keywords that occur 2 or more times"%len(nKwHist))
     else:
-        df['nKwds'] = df['kwds']
+        df['newKwds'] = df['kwds']
 
     kwAttr = 'eKwds'
     if enhance:
-        #split multi-word keywords and add if in the master keyword list
+        # split multi-word keywords and add sub-keywords if in the master keyword list
         print("enhancing multi-keywords with sub-keywords")
         df[kwAttr] = enhanceKeywords(df, masterKwds)
     else:
-        df[kwAttr] = df['nKwds']
+        df[kwAttr] = df['newKwds']
+
+    if syndic:
+        # synonym dictionary is {term, commonterm}; map terms to common term
+        df[kwAttr] = df[kwAttr].apply(lambda x: list(set([syndic[kw] if kw in syndic else x for kw in x])))
 
     # recompute histogram on enhanced set of keywords
     kwHist = dict([item for item in Counter([k for kwList in df[kwAttr] for k in kwList]).most_common() if item[1] > 1])
     print("%d Enhanced Keywords that occur 2 or more times"%len(kwHist))
     df['enhanced_keywords'] = df['eKwds'].apply(lambda x: '|'.join(x))
-    df.drop(['nKwds', 'kwds'], axis=1, inplace=True)
+    df.drop(['newKwds', 'kwds'], axis=1, inplace=True)
     return kwAttr

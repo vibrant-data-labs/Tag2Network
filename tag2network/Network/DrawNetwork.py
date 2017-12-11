@@ -420,31 +420,6 @@ def draw_nx_nodes(G, pos,
                                  marker='o')
         highlight_collection.set_zorder(2)
 
-'''
-def draw_keyword_network(nw, df, layout, nodeAttr='Cluster', nodeVals=None,
-                         node_size=30, plotname=None, colors=None, title="KWNetwork"):
-    if colors is None:
-        colors = ["red", "green", "orange", "blue", "yellow", "darkviolet",
-                  "darkred", "darkgreen", "darkorange", "mediumblue", "gold", "rebeccapurple",
-                  "tomato", "seagreen", "navajowhite", "lightskyblue", "lemonchiffon", "plum"]
-    counts = df['Cluster'].value_counts()
-    # color nodes by cluster
-    clus_colors = {clus: colors[idx%len(colors)] for idx, clus in enumerate(counts.index)}
-    node_colors = dict(zip(df['id'], df['Cluster'].map(clus_colors)))
-    color_list = [node_colors[node] for node in nw.nodes()]
-    # plot network
-    fig = plt.figure(figsize=(10,8), tight_layout={'rect': (0, 0, 0.8, 1)})
-    plt.axis('off')
-    _draw_networkx_(nw, layout, plotname=plotname, arrow=False,
-                     with_labels=False, node_color=color_list,
-                     edge_color='gray', node_size=30)
-    # add legend
-    patches = [mpatches.Patch(color=clus_colors[clus], label=clus+'('+str(counts.loc[clus])+')') for clus in counts.index]
-    fig.axes[0].legend(handles=patches,loc='upper right', bbox_to_anchor=(1.25, 1.0), borderpad=0.05, borderaxespad=0.05)
-    if plotname is not None:
-        plt.savefig(plotname)
-'''
-
 # draw network where nodes are colored by a categorical attribute node_attr
 # nodes are ordered by descending frequency of category values
 # optionally color_edges by whether they are intra (colored) or intra (gray) category
@@ -473,7 +448,7 @@ def draw_network_categorical(nw, df, layout, node_attr='Cluster', node_vals=None
     # plot network
     fig = plt.figure(figsize=(10,8), tight_layout={'rect': (0, 0, 0.8, 1)})
     plt.axis('off')
-    _draw_networkx_(nw, layout, plotname=plotname, arrow=False,
+    _draw_networkx_(nw, layout, arrow=False,
                      with_labels=False, node_color=color_list,
                      edge_color=edge_color, node_size=node_size)
     if title is not None:
@@ -481,6 +456,6 @@ def draw_network_categorical(nw, df, layout, node_attr='Cluster', node_vals=None
     # add legend
     patches = [mpatches.Patch(color=attr_colors[val], label=val+'('+str(counts.loc[val])+')') for val in counts.index]
     fig.axes[0].legend(handles=patches,loc='upper right', bbox_to_anchor=(1.25, 1.0), borderpad=0.05, borderaxespad=0.05)
-    if plotname is not None:
-        plt.savefig(plotname)
+    if plotfilename is not None:
+        plt.savefig(plotfilename)
 
