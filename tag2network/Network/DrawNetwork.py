@@ -420,14 +420,7 @@ def draw_nx_nodes(G, pos,
                                  marker='o')
         highlight_collection.set_zorder(2)
 
-# draw network where nodes are colored by a categorical attribute node_attr
-# nodes are ordered by descending frequency of category values
-# optionally color_edges by whether they are intra (colored) or intra (gray) category
-# optional list of node_attr values allows drawing network with predefined attribute value ordering
-# so multiple images can have the same color scheme
-# if plotfilename is given, image is writeen to file
-def draw_network_categorical(nw, df, layout, node_attr='Cluster', node_vals=None, node_size=30,
-                             plotfilename=None, colors=None, title=None, color_edges=True):
+def getCategoricalColors(nw, df, node_attr, node_vals, color_edges, colors, edge_color='gray'):
     if colors is None:
         colors = ["red", "limegreen", "orange", "mediumblue", "yellow", "darkviolet",
                   "darkred", "darkgreen", "chocolate", "dodgerblue", "gold", "rebeccapurple",
@@ -438,24 +431,38 @@ def draw_network_categorical(nw, df, layout, node_attr='Cluster', node_vals=None
         attr_colors = {val: colors[idx%len(colors)] for idx, val in enumerate(node_vals)}
     else:
         attr_colors = {val: colors[idx%len(colors)] for idx, val in enumerate(counts.index)}
-    node_colors = dict(zip(df['id'], df[node_attr].map(attr_colors)))
-    color_list = [node_colors[node] for node in nw.nodes()]
+    node_color_map = dict(zip(df['id'], df[node_attr].map(attr_colors)))
+    #node_colors = [node_color_map[node] for node in nw.nodes()]
+    node_colors = [node_color_map[node] for node in df['id']]
     # color edges
     if color_edges:
-        edge_color = [node_colors[edge[0]] if node_colors[edge[0]] == node_colors[edge[1]] else 'gray' for edge in nw.edges()]
+        edge_colors = [node_color_map[edge[0]] if node_color_map[edge[0]] == node_color_map[edge[1]] else edge_color for edge in nw.edges()]
     else:
-        edge_color = 'gray'
+        edge_colors = [edge_color]*nw.number_of_edges()
+    return np.array(node_colors), np.array(edge_colors), attr_colors
+
+# draw network where nodes are colored by a categorical attribute node_attr
+# nodes are ordered by descending frequency of category values
+# optionally color_edges by whether they are intra (colored) or intra (gray) category
+# optional list of node_attr values allows drawing network with predefined attribute value ordering
+# so multiple images can have the same color scheme
+# if plotfile is given, image is written to file
+def draw_network_categorical(nw, df, node_attr='Cluster', node_vals=None, node_size=30,
+                             plotfile=None, colors=None, title=None, color_edges=True):
+    layout = dict(zip(df.id, list(zip(df.x, df.y))))
+    node_colors, edge_colors, attr_colors = getCategoricalColors(nw, df, node_attr, node_vals, color_edges, None)
     # plot network
     fig = plt.figure(figsize=(10,8), tight_layout={'rect': (0, 0, 0.8, 1)})
     plt.axis('off')
     _draw_networkx_(nw, layout, arrow=False,
-                     with_labels=False, node_color=color_list,
-                     edge_color=edge_color, node_size=node_size)
+                     with_labels=False, node_color=node_colors,
+                     edge_color=edge_colors, node_size=node_size)
     if title is not None:
         plt.gca().set_title(title)
     # add legend
+    counts = df[node_attr].value_counts()
     patches = [mpatches.Patch(color=attr_colors[val], label=val+'('+str(counts.loc[val])+')') for val in counts.index]
     fig.axes[0].legend(handles=patches,loc='upper right', bbox_to_anchor=(1.25, 1.0), borderpad=0.05, borderaxespad=0.05)
-    if plotfilename is not None:
-        plt.savefig(plotfilename)
+    if plotfile is not None:
+        plt.savefig(plotfile)
 

@@ -117,7 +117,7 @@ def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', s
 
     if syndic:
         # synonym dictionary is {term, commonterm}; map terms to common term
-        df[kwAttr] = df[kwAttr].apply(lambda x: list(set([syndic[kw] if kw in syndic else x for kw in x])))
+        df[kwAttr] = df[kwAttr].apply(lambda x: list(set([syndic[kw] if kw in syndic else kw for kw in x])))
 
     # recompute histogram on enhanced set of keywords
     kwHist = dict([item for item in Counter([k for kwList in df[kwAttr] for k in kwList]).most_common() if item[1] > 1])

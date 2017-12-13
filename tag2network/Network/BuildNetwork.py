@@ -6,10 +6,11 @@ import math
 from collections import Counter
 from scipy.sparse import dok_matrix
 from scipy.sparse import csr_matrix
-
 import networkx as nx
+
 import ClusteringProperties as cp
 from DrawNetwork import draw_network_categorical
+#from InteractiveNetworkViz import drawInteractiveNW
 from louvain import generate_dendrogram
 from louvain import partition_at_level
 from tSNELayout import runTSNELayout
@@ -116,9 +117,46 @@ def buildClusterNames(df, allTagHist, tagAttr, clAttr='Cluster', wtd=True):
     for info in clusInfo:
         print("Cluster %s, %d nodes, name: %s"%info)
 
+# build network helper function
+# thresholds si,ilarity, computes clusters and other attributes, names clusters if applicable
+# draws network, saves plot and data to files
+def _buildNetworkHelper(df, sim, linksPer=4, color_attr=None, outname=None,
+                           nodesname=None, edgesname=None, plotfile=None,
+                           toFile=True, doLayout=True, draw=False, tagHist=None, tagAttr=None):
+    # threshold
+    print("Threshold similarity")
+    sim = threshold(sim, linksPer=linksPer)
+    # make edge dataframe
+    edgedf = simMatToLinkDataFrame(sim)
+    # add clusters and attributes
+    nw = buildNetworkX(edgedf)
+    addLouvainClusters(df, nw=nw)
+    addNetworkAttributes(df, nw=nw)
+    if tagHist and tagAttr:
+        buildClusterNames(df, tagHist, tagAttr)
+    if doLayout:
+        add_layout(df, nw=nw)
+        if draw:
+            #drawInteractiveNW(df, nw=nw, plotfile=plotfile)
+            draw_network_categorical(nw, df, plotfile=plotfile)
+
+    if toFile:
+        # output to csv
+        if nodesname is not None and edgesname is not None:
+            print("Writing nodes and edges to files")
+            df.to_csv(nodesname,index=False)
+            edgedf.to_csv(edgesname,index=False)
+        # output to xlsx
+        if outname is not None:
+            print("Writing network to file")
+            writer = pd.ExcelWriter(outname)
+            df.to_excel(writer,'Nodes',index=False)
+            edgedf.to_excel(writer,'Links',index=False)
+            writer.save()
+
 # build network, linking based on common tags, tag lists in column named tagAttr
-def buildTagNetwork(df, tagAttr='eKwds', dropCols=[], outname=None,
-                        nodesname=None, edgesname=None, plotname=None, idf=True,
+def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outname=None,
+                        nodesname=None, edgesname=None, plotfile=None, idf=True,
                         toFile=True, doLayout=True, draw=False):
     print("Building document network")
     tagHist = dict([item for item in Counter([k for kwList in df[tagAttr] for k in kwList]).most_common() if item[1] > 1])
@@ -129,36 +167,21 @@ def buildTagNetwork(df, tagAttr='eKwds', dropCols=[], outname=None,
     sim = simCosine(features)
     # avoid self-links
     np.fill_diagonal(sim, 0)
-    # threshold
-    print("Threshold similarity")
-    sim = threshold(sim)
-    # make edge dataframe
-    edgedf = simMatToLinkDataFrame(sim)
     df['id'] = range(len(df))
     df.drop(dropCols, axis=1, inplace=True)
-    # add clusters and attributes
-    nw = buildNetworkX(edgedf)
-    addLouvainClusters(df, nw=nw)
-    addNetworkAttributes(df, nw=nw)
-    buildClusterNames(df, tagHist, tagAttr)
-    if doLayout:
-        layout = add_layout(df, nw=nw)
-        if draw:
-            draw_network_categorical(nw, df, layout, plotfilename=plotname)
+    _buildNetworkHelper(df, sim, color_attr=color_attr, outname=outname,
+                           nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
+                           toFile=toFile, doLayout=doLayout, draw=draw, tagHist=tagHist, tagAttr=tagAttr)
 
-    if toFile:
-        # output to xlsx
-        if outname is not None:
-            print("Writing network to file")
-            writer = pd.ExcelWriter(outname)
-            df.to_excel(writer,'Nodes',index=False)
-            edgedf.to_excel(writer,'Links',index=False)
-            writer.save()
-        # output to csv
-        if nodesname is not None and edgesname is not None:
-            print("Writing nodes and edges to files")
-            df.to_csv(nodesname,index=False)
-            edgedf.to_csv(edgesname,index=False)
+# build network given node dataframe and similarity matrix
+#
+def buildSimilarityNetwork(df, sim, color_attr=None, outname=None,
+                           nodesname=None, edgesname=None, plotfile=None,
+                           toFile=True, doLayout=True, draw=False):
+    df['id'] = range(len(df))
+    _buildNetworkHelper(df, sim, color_attr=color_attr, outname=outname,
+                           nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
+                           toFile=toFile, doLayout=doLayout, draw=draw)
 
 # build link dataframe
 def simMatToLinkDataFrame(simMat):
@@ -224,6 +247,7 @@ def addLouvainClusters(nodesdf, linksdf=None, nw=None, clusterLevel=0):
     # add cluster attr to dataframe
     for grp, vals in clusterings.iteritems():
         _add_attr(nodesdf, grp, vals)
+        nodesdf[grp].fillna('', inplace=True)
 
 def add_layout(nodesdf, linksdf=None, nw=None):
     print("Running graph layout")

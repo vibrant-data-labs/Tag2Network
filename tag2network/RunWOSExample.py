@@ -32,7 +32,7 @@ fname = os.path.join(datapath, namebase+"Final.txt")
 
 # too many documents - keep a fraction of them by year and citation rate
 #df = filterDocuments(fname, 0.9)
-df = filterDocuments(fname, 0.5)    # for debugging so it runs faster
+df = filterDocuments(fname, 0.1)    # for debugging so it runs faster
 
 # set up output file names
 nwname = os.path.join(datapath, namebase+".xlsx")
