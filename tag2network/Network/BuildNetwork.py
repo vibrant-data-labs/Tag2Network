@@ -118,7 +118,7 @@ def buildClusterNames(df, allTagHist, tagAttr, clAttr='Cluster', wtd=True):
         print("Cluster %s, %d nodes, name: %s"%info)
 
 # build network helper function
-# thresholds si,ilarity, computes clusters and other attributes, names clusters if applicable
+# thresholds similarity, computes clusters and other attributes, names clusters if applicable
 # draws network, saves plot and data to files
 def _buildNetworkHelper(df, sim, linksPer=4, color_attr=None, outname=None,
                            nodesname=None, edgesname=None, plotfile=None,
@@ -155,6 +155,13 @@ def _buildNetworkHelper(df, sim, linksPer=4, color_attr=None, outname=None,
             writer.save()
 
 # build network, linking based on common tags, tag lists in column named tagAttr
+# color_attr - the attribute to color the nodes by
+# outname - name of xlsx file to output network to
+# nodesname - name of file for nodes csv
+# edgesname - name of file for edge csv
+# plotfile - name of file for plot image
+# doLayout - if true, run layout
+# draw - if True and if running layout, then draw the network and possibly save image to file (if plotfile is given)
 def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outname=None,
                         nodesname=None, edgesname=None, plotfile=None, idf=True,
                         toFile=True, doLayout=True, draw=False):
@@ -174,8 +181,14 @@ def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outn
                            toFile=toFile, doLayout=doLayout, draw=draw, tagHist=tagHist, tagAttr=tagAttr)
 
 # build network given node dataframe and similarity matrix
-#
-def buildSimilarityNetwork(df, sim, color_attr=None, outname=None,
+# color_attr is the attribute to color the nodes by
+# outname - name of xlsx file to output network to
+# nodesname - name of file for nodes csv
+# edgesname - name of file for edge csv
+# plotfile - name of file for plot image
+# doLayout - if true, run layout
+# draw - if True and if running layout, then draw the network and possibly save image to file (if plotfile is given)
+def buildSimilarityNetwork(df, sim, color_attr="Cluster", outname=None,
                            nodesname=None, edgesname=None, plotfile=None,
                            toFile=True, doLayout=True, draw=False):
     df['id'] = range(len(df))
@@ -247,7 +260,7 @@ def addLouvainClusters(nodesdf, linksdf=None, nw=None, clusterLevel=0):
     # add cluster attr to dataframe
     for grp, vals in clusterings.iteritems():
         _add_attr(nodesdf, grp, vals)
-        nodesdf[grp].fillna('', inplace=True)
+        nodesdf[grp].fillna('No Cluster', inplace=True)
 
 def add_layout(nodesdf, linksdf=None, nw=None):
     print("Running graph layout")

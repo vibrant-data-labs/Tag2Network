@@ -432,8 +432,7 @@ def getCategoricalColors(nw, df, node_attr, node_vals, color_edges, colors, edge
     else:
         attr_colors = {val: colors[idx%len(colors)] for idx, val in enumerate(counts.index)}
     node_color_map = dict(zip(df['id'], df[node_attr].map(attr_colors)))
-    #node_colors = [node_color_map[node] for node in nw.nodes()]
-    node_colors = [node_color_map[node] for node in df['id']]
+    node_colors = [node_color_map[node] for node in nw.nodes()]
     # color edges
     if color_edges:
         edge_colors = [node_color_map[edge[0]] if node_color_map[edge[0]] == node_color_map[edge[1]] else edge_color for edge in nw.edges()]
