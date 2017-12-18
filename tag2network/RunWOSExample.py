@@ -45,5 +45,5 @@ kwAttr = buildKeywords(df, blacklist, whitelist)
 
 # build network linked by keyword similarity
 buildTagNetwork(df, kwAttr, dropCols=dropCols, outname=nwname,
-                    nodesname=nodesname, edgesname=edgesname, plotname=plotname,
+                    nodesname=nodesname, edgesname=edgesname, plotfile=plotname,
                     doLayout=True, draw=True)
