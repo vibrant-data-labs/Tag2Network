@@ -8,12 +8,12 @@ from scipy.sparse import dok_matrix
 from scipy.sparse import csr_matrix
 import networkx as nx
 
-import ClusteringProperties as cp
-from DrawNetwork import draw_network_categorical
+import Network.ClusteringProperties as cp
+from Network.DrawNetwork import draw_network_categorical
 #from InteractiveNetworkViz import drawInteractiveNW
-from louvain import generate_dendrogram
-from louvain import partition_at_level
-from tSNELayout import runTSNELayout
+from Network.louvain import generate_dendrogram
+from Network.louvain import partition_at_level
+from Network.tSNELayout import runTSNELayout
 
 # build sparse feature matrix with optional idf weighting
 # each row is a document, each column is a tag
@@ -21,7 +21,7 @@ from tSNELayout import runTSNELayout
 def buildFeatures(df, tagHist, idf, tagAttr):
     allTags = tagHist.keys()
     # build tag-index mapping
-    tagIdx = dict(zip(allTags, xrange(len(allTags))))
+    tagIdx = dict(zip(allTags, range(len(allTags))))
     # build feature matrix
     print("Build feature matrix")
     nDoc = len(df)
@@ -75,7 +75,7 @@ def threshold(sim, linksPer=4):
         # get minimum index to keep in each row
         minelement = (nnodes - nonzero).astype(int)
         # in each row, set values below number to keep to zero
-        for i in xrange(nnodes):
+        for i in range(nnodes):
             sim[i][indices[i][:minelement[i]]] = 0.0
     return sim
 
@@ -227,10 +227,10 @@ def addNetworkAttributes(nodesdf, linksdf=None, nw=None, groupVars=["Cluster"], 
     # add bridging, cluster centrality etc. for one or more grouping variables
     for groupVar in groupVars:
         if len(nx.get_node_attributes(nw, groupVar)) == 0:
-            vals = {k:v for k,v in dict(zip(nodesdf['id'], nodesdf[groupVar])).iteritems() if k in nw}
+            vals = {k:v for k,v in dict(zip(nodesdf['id'], nodesdf[groupVar])).items() if k in nw}
             nx.set_node_attributes(nw, vals, groupVar)
         grpprop = cp.basicClusteringProperties(nw, groupVar)
-        for prop, vals in grpprop.iteritems():
+        for prop, vals in grpprop.items():
             _add_attr(nodesdf, prop, vals)
 
 # compute and add Louvain clusters to node dataframe
@@ -258,7 +258,7 @@ def addLouvainClusters(nodesdf, linksdf=None, nw=None, clusterLevel=0):
     depth = min(clusterLevel, len(dendo) - 1)
     getPartitioning(depth, gg, dendo, clusterings)
     # add cluster attr to dataframe
-    for grp, vals in clusterings.iteritems():
+    for grp, vals in clusterings.items():
         _add_attr(nodesdf, grp, vals)
         nodesdf[grp].fillna('No Cluster', inplace=True)
 
