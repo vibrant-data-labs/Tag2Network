@@ -50,7 +50,7 @@ def basicClusteringProperties(network, clustering):
             nGroups = len(clusterCounts)
             fracIntergroup = float(nIntergroup) / degree if (degree > 0) else 0
             diversity = 0
-            p = np.array(clusterCounts.values()) / degree
+            p = np.array(list(clusterCounts.values())) / degree
             p = p[np.nonzero(p)]
             diversity = -np.sum(p * np.log(p))
             bridging = 0 if nGroups < 2 else diversity * float(nIntergroup) / (nGroups - 1)
@@ -61,7 +61,7 @@ def basicClusteringProperties(network, clustering):
             results[properties[2]][node] = bridging
             results[properties[3]][node] = centrality
     # normalize values within each cluster
-    for nodes in clusters.itervalues():
+    for nodes in clusters.values():
         def normalize(results, nodes, attr):
             def normalizeArray(arr):
                 npArr = np.array(arr)

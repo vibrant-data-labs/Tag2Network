@@ -82,7 +82,7 @@ def threshold(sim, linksPer=4):
 # build cluster name based on keywords that occur commonly in the cluster
 # if wtd, then weigh keywords based on local frequency relative to global freq
 def buildClusterNames(df, allTagHist, tagAttr, clAttr='Cluster', wtd=True):
-    allVals = np.array(allTagHist.values(), dtype=float)
+    allVals = np.array(list(allTagHist.values()), dtype=float)
     allFreq = dict(zip(allTagHist.keys(), allVals/allVals.sum()))
     #clusters = df['clusId'].unique()
     clusters = df[clAttr].unique()
@@ -94,7 +94,7 @@ def buildClusterNames(df, allTagHist, tagAttr, clAttr='Cluster', wtd=True):
         if nRows > 0:
             tagHist = Counter([k for tagList in df[tagAttr][clusRows] for k in tagList if k in allTagHist])
             if wtd:
-                vals = np.array(tagHist.values(), dtype=float)
+                vals = np.array(list(tagHist.values()), dtype=float)
                 freq = dict(zip(tagHist.keys(), vals/vals.sum()))
                 wtdTag = [(item[0], item[1]*math.sqrt(freq[item[0]]/allFreq[item[0]])) for item in tagHist.most_common()]
                 wtdTag.sort(key=lambda x: x[1], reverse=True)
