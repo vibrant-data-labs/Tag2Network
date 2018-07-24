@@ -8,12 +8,12 @@ from scipy.sparse import dok_matrix
 from scipy.sparse import csr_matrix
 import networkx as nx
 
-import ClusteringProperties as cp
-from DrawNetwork import draw_network_categorical
+import Network.ClusteringProperties as cp
+from Network.DrawNetwork import draw_network_categorical
 #from InteractiveNetworkViz import drawInteractiveNW
-from louvain import generate_dendrogram
-from louvain import partition_at_level
-from tSNELayout import runTSNELayout
+from Network.louvain import generate_dendrogram
+from Network.louvain import partition_at_level
+from Network.tSNELayout import runTSNELayout
 
 # build sparse feature matrix with optional idf weighting
 # each row is a document, each column is a tag
@@ -21,7 +21,7 @@ from tSNELayout import runTSNELayout
 def buildFeatures(df, tagHist, idf, tagAttr):
     allTags = tagHist.keys()
     # build tag-index mapping
-    tagIdx = dict(zip(allTags, xrange(len(allTags))))
+    tagIdx = dict(zip(allTags, range(len(allTags))))
     # build feature matrix
     print("Build feature matrix")
     nDoc = len(df)
@@ -75,18 +75,19 @@ def threshold(sim, linksPer=4):
         # get minimum index to keep in each row
         minelement = (nnodes - nonzero).astype(int)
         # in each row, set values below number to keep to zero
-        for i in xrange(nnodes):
+        for i in range(nnodes):
             sim[i][indices[i][:minelement[i]]] = 0.0
     return sim
 
 # build cluster name based on keywords that occur commonly in the cluster
 # if wtd, then weigh keywords based on local frequency relative to global freq
 def buildClusterNames(df, allTagHist, tagAttr, clAttr='Cluster', wtd=True):
-    allVals = np.array(allTagHist.values(), dtype=float)
+    allVals = np.array(list(allTagHist.values()), dtype=float)
     allFreq = dict(zip(allTagHist.keys(), allVals/allVals.sum()))
     #clusters = df['clusId'].unique()
     clusters = df[clAttr].unique()
     df['cluster_name'] = ''
+    df['top_tags'] = ''
     clusInfo = []
     for clus in clusters:
         clusRows = df[clAttr] == clus
@@ -94,9 +95,11 @@ def buildClusterNames(df, allTagHist, tagAttr, clAttr='Cluster', wtd=True):
         if nRows > 0:
             tagHist = Counter([k for tagList in df[tagAttr][clusRows] for k in tagList if k in allTagHist])
             if wtd:
-                vals = np.array(tagHist.values(), dtype=float)
+                vals = np.array(list(tagHist.values()), dtype=float)
                 freq = dict(zip(tagHist.keys(), vals/vals.sum()))
-                wtdTag = [(item[0], item[1]*math.sqrt(freq[item[0]]/allFreq[item[0]])) for item in tagHist.most_common()]
+                # weight tags, only include tag if it is more common than global
+                wtdTag = [(item[0], item[1]*math.sqrt(freq[item[0]]/allFreq[item[0]])) \
+                          for item in tagHist.most_common() if freq[item[0]] > allFreq[item[0]]]
                 wtdTag.sort(key=lambda x: x[1], reverse=True)
                 topTag = [item[0] for item in wtdTag[:10]]
             else:
@@ -112,6 +115,7 @@ def buildClusterNames(df, allTagHist, tagAttr, clAttr='Cluster', wtd=True):
             # build and store name
             clName = ', '.join(topTag[:5])
             df.loc[clusRows,'cluster_name'] = clName
+            df.loc[clusRows,'top_tags'] = topTag
             clusInfo.append((clus, nRows, clName))
     clusInfo.sort(key=lambda x: x[1], reverse=True)
     for info in clusInfo:
@@ -153,6 +157,7 @@ def _buildNetworkHelper(df, sim, linksPer=4, color_attr=None, outname=None,
             df.to_excel(writer,'Nodes',index=False)
             edgedf.to_excel(writer,'Links',index=False)
             writer.save()
+    return df, edgedf
 
 # build network, linking based on common tags, tag lists in column named tagAttr
 # color_attr - the attribute to color the nodes by
@@ -176,7 +181,7 @@ def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outn
     np.fill_diagonal(sim, 0)
     df['id'] = range(len(df))
     df.drop(dropCols, axis=1, inplace=True)
-    _buildNetworkHelper(df, sim, color_attr=color_attr, outname=outname,
+    return _buildNetworkHelper(df, sim, color_attr=color_attr, outname=outname,
                            nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
                            toFile=toFile, doLayout=doLayout, draw=draw, tagHist=tagHist, tagAttr=tagAttr)
 
@@ -192,7 +197,7 @@ def buildSimilarityNetwork(df, sim, color_attr="Cluster", outname=None,
                            nodesname=None, edgesname=None, plotfile=None,
                            toFile=True, doLayout=True, draw=False):
     df['id'] = range(len(df))
-    _buildNetworkHelper(df, sim, color_attr=color_attr, outname=outname,
+    return _buildNetworkHelper(df, sim, color_attr=color_attr, outname=outname,
                            nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
                            toFile=toFile, doLayout=doLayout, draw=draw)
 
@@ -227,10 +232,10 @@ def addNetworkAttributes(nodesdf, linksdf=None, nw=None, groupVars=["Cluster"], 
     # add bridging, cluster centrality etc. for one or more grouping variables
     for groupVar in groupVars:
         if len(nx.get_node_attributes(nw, groupVar)) == 0:
-            vals = {k:v for k,v in dict(zip(nodesdf['id'], nodesdf[groupVar])).iteritems() if k in nw}
+            vals = {k:v for k,v in dict(zip(nodesdf['id'], nodesdf[groupVar])).items() if k in nw}
             nx.set_node_attributes(nw, vals, groupVar)
         grpprop = cp.basicClusteringProperties(nw, groupVar)
-        for prop, vals in grpprop.iteritems():
+        for prop, vals in grpprop.items():
             _add_attr(nodesdf, prop, vals)
 
 # compute and add Louvain clusters to node dataframe
@@ -258,7 +263,7 @@ def addLouvainClusters(nodesdf, linksdf=None, nw=None, clusterLevel=0):
     depth = min(clusterLevel, len(dendo) - 1)
     getPartitioning(depth, gg, dendo, clusterings)
     # add cluster attr to dataframe
-    for grp, vals in clusterings.iteritems():
+    for grp, vals in clusterings.items():
         _add_attr(nodesdf, grp, vals)
         nodesdf[grp].fillna('No Cluster', inplace=True)
 

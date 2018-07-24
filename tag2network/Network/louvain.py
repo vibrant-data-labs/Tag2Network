@@ -538,7 +538,7 @@ def __insert(node, com, weight, status) :
 
 def __modularity(status) :
     """
-    Compute the modularity of the partition of the graph faslty using status precomputed
+    Compute the modularity of the partition of the graph quickly using status precomputed
     """
     links = float(status.total_weight)
     result = 0.
