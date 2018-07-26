@@ -115,8 +115,9 @@ def buildClusterNames(df, allTagHist, tagAttr, clAttr='Cluster', wtd=True):
             # build and store name
             clName = ', '.join(topTag[:5])
             df.loc[clusRows,'cluster_name'] = clName
-            df.loc[clusRows,'top_tags'] = topTag
+            df.loc[clusRows,'top_tags'] = ', '.join(topTag)
             clusInfo.append((clus, nRows, clName))
+    df['top_tags'] = df['top_tags'].str.split(',')
     clusInfo.sort(key=lambda x: x[1], reverse=True)
     for info in clusInfo:
         print("Cluster %s, %d nodes, name: %s"%info)
