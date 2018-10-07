@@ -27,8 +27,8 @@ def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', s
 
         def add23Grams(wordlist):
             #print ("making bigrams and trigrams from text ngrams")
-            bigrams = [' '.join(wordlist[i:i+2]) for i in xrange(len(wordlist)-1)]
-            trigrams = [' '.join(wordlist[i:i+3]) for i in xrange(len(wordlist)-2)]
+            bigrams = [' '.join(wordlist[i:i+2]) for i in range(len(wordlist)-1)]
+            trigrams = [' '.join(wordlist[i:i+3]) for i in range(len(wordlist)-2)]
             return bigrams+trigrams
 
         def getNGrams(text):
