@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+#
+#
+# Build network from similarity matrix by thresholding
+# or from matrix of possibly weighted connections 
+#
+# Add data to nodes - cluster, netowrk proerties, layout coordinates
+#
 
 import numpy as np
 import pandas as pd
@@ -122,43 +129,49 @@ def buildClusterNames(df, allTagHist, tagAttr, clAttr='Cluster', wtd=True):
     for info in clusInfo:
         print("Cluster %s, %d nodes, name: %s"%info)
 
+def buildNetworkFromNodesAndEdges(nodesdf, edgedf, outname=None,
+                           nodesname=None, edgesname=None, plotfile=None,
+                           doLayout=True, tagHist=None, tagAttr=None):
+    # add clusters and attributes
+    nw = buildNetworkX(edgedf)
+    addLouvainClusters(nodesdf, nw=nw)
+    addNetworkAttributes(nodesdf, nw=nw)
+    if tagHist and tagAttr:
+        buildClusterNames(nodesdf, tagHist, tagAttr)
+    if doLayout:
+        add_layout(nodesdf, nw=nw)
+        if plotfile is not None:
+            #drawInteractiveNW(df, nw=nw, plotfile=plotfile)
+            draw_network_categorical(nw, nodesdf, plotfile=plotfile)
+    # output to csv
+    if nodesname is not None and edgesname is not None:
+        print("Writing nodes and edges to files")
+        nodesdf.to_csv(nodesname,index=False)
+        edgedf.to_csv(edgesname,index=False)
+    # output to xlsx
+    if outname is not None:
+        print("Writing network to file")
+        writer = pd.ExcelWriter(outname)
+        nodesdf.to_excel(writer,'Nodes',index=False)
+        edgedf.to_excel(writer,'Links',index=False)
+        writer.save()
+    return nodesdf, edgedf
+
 # build network helper function
 # thresholds similarity, computes clusters and other attributes, names clusters if applicable
 # draws network, saves plot and data to files
-def _buildNetworkHelper(df, sim, linksPer=4, color_attr=None, outname=None,
+def _buildNetworkHelper(df, sim, linksPer=4, outname=None,
                            nodesname=None, edgesname=None, plotfile=None,
-                           toFile=True, doLayout=True, draw=False, tagHist=None, tagAttr=None):
+                           doLayout=True, tagHist=None, tagAttr=None):
     # threshold
     print("Threshold similarity")
     sim = threshold(sim, linksPer=linksPer)
     # make edge dataframe
-    edgedf = simMatToLinkDataFrame(sim)
-    # add clusters and attributes
-    nw = buildNetworkX(edgedf)
-    addLouvainClusters(df, nw=nw)
-    addNetworkAttributes(df, nw=nw)
-    if tagHist and tagAttr:
-        buildClusterNames(df, tagHist, tagAttr)
-    if doLayout:
-        add_layout(df, nw=nw)
-        if draw:
-            #drawInteractiveNW(df, nw=nw, plotfile=plotfile)
-            draw_network_categorical(nw, df, plotfile=plotfile)
+    edgedf = matrixToLinkDataFrame(sim)
 
-    if toFile:
-        # output to csv
-        if nodesname is not None and edgesname is not None:
-            print("Writing nodes and edges to files")
-            df.to_csv(nodesname,index=False)
-            edgedf.to_csv(edgesname,index=False)
-        # output to xlsx
-        if outname is not None:
-            print("Writing network to file")
-            writer = pd.ExcelWriter(outname)
-            df.to_excel(writer,'Nodes',index=False)
-            edgedf.to_excel(writer,'Links',index=False)
-            writer.save()
-    return df, edgedf
+    return buildNetworkFromNodesAndEdges(df, edgedf, outname=outname,
+                           nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
+                           doLayout=doLayout, tagHist=tagHist, tagAttr=tagAttr)
 
 # build network, linking based on common tags, tag lists in column named tagAttr
 # color_attr - the attribute to color the nodes by
@@ -170,7 +183,7 @@ def _buildNetworkHelper(df, sim, linksPer=4, color_attr=None, outname=None,
 # draw - if True and if running layout, then draw the network and possibly save image to file (if plotfile is given)
 def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outname=None,
                         nodesname=None, edgesname=None, plotfile=None, idf=True,
-                        toFile=True, doLayout=True, draw=False):
+                        toFile=True, doLayout=True):
     print("Building document network")
     tagHist = dict([item for item in Counter([k for kwList in df[tagAttr] for k in kwList]).most_common() if item[1] > 1])
     # build document-keywords feature matrix
@@ -182,9 +195,9 @@ def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outn
     np.fill_diagonal(sim, 0)
     df['id'] = range(len(df))
     df.drop(dropCols, axis=1, inplace=True)
-    return _buildNetworkHelper(df, sim, color_attr=color_attr, outname=outname,
+    return _buildNetworkHelper(df, sim, outname=outname,
                            nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
-                           toFile=toFile, doLayout=doLayout, draw=draw, tagHist=tagHist, tagAttr=tagAttr)
+                           doLayout=doLayout, tagHist=tagHist, tagAttr=tagAttr)
 
 # build network given node dataframe and similarity matrix
 # color_attr is the attribute to color the nodes by
@@ -196,15 +209,15 @@ def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outn
 # draw - if True and if running layout, then draw the network and possibly save image to file (if plotfile is given)
 def buildSimilarityNetwork(df, sim, color_attr="Cluster", outname=None,
                            nodesname=None, edgesname=None, plotfile=None,
-                           toFile=True, doLayout=True, draw=False):
+                           toFile=True, doLayout=True):
     df['id'] = range(len(df))
-    return _buildNetworkHelper(df, sim, color_attr=color_attr, outname=outname,
+    return _buildNetworkHelper(df, sim, outname=outname,
                            nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
-                           toFile=toFile, doLayout=doLayout, draw=draw)
+                           toFile=toFile, doLayout=doLayout)
 
-# build link dataframe
-def simMatToLinkDataFrame(simMat):
-    links = np.transpose(np.nonzero(simMat))
+# build link dataframe from matrix where non-zero element is a link
+def matrixToLinkDataFrame(mat):
+    links = np.transpose(np.nonzero(mat))
     linkList = [{'Source': l[0], 'Target': l[1]} for l in links]
     return pd.DataFrame(linkList)
 

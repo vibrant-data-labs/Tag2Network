@@ -5,18 +5,24 @@ from collections import Counter
 
 # build keywords dataset with keywords and a block of text
 # blacklist and whitelist are both sets
-# kwAttr is a string of | separated keywords
+# kwAttr is name of keyword column
+# keyword column is a string of | separated keywords
 # for each document, split text into 1-, 2-, 3-grams using stopwords and punctuation to separate phrases
 # add each ngram to keyword list if it is present in the master keyword list
 # the master keyword list is all keywords from kwAttr plus the whitelist
 # "enhance" # splits multi-word keywords and adds sub-keywords if in the master keyword list
 # syndic is a synonym dictionary {synonym:commonTerm} pairs
-def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', syndic=None, addFromText=True, enhance=True):
-    def addTextKeywords(df, allKwds):
+# all_text == True keeps all text-derived ngrams instead of matching to master list
+def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', 
+                  syndic=None, addFromText=True, enhance=True, all_text=False):
+    def addTextKeywords(df, allKwds, all_text):
         stopwords = set(['a', 'the', 'this', 'that', 'and', 'or', 'of', 'not',
-                         'is', 'in', 'it', 'its', 'but', 'what', 'with'])
+                         'is', 'in', 'it', 'its', 'but', 'what', 'with', 'as', 'to',
+                         'why', 'are', 'do', 'from', 'for'])
 
         def findKeywords(ngrams):
+            if all_text:
+                return ngrams
             textkwds = set()
             for ngram in ngrams:
                 if ngram in allKwds:
@@ -27,8 +33,8 @@ def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', s
 
         def add23Grams(wordlist):
             #print ("making bigrams and trigrams from text ngrams")
-            bigrams = [' '.join(wordlist[i:i+2]) for i in xrange(len(wordlist)-1)]
-            trigrams = [' '.join(wordlist[i:i+3]) for i in xrange(len(wordlist)-2)]
+            bigrams = [' '.join(wordlist[i:i+2]) for i in range(len(wordlist)-1)]
+            trigrams = [' '.join(wordlist[i:i+3]) for i in range(len(wordlist)-2)]
             return bigrams+trigrams
 
         def getNGrams(text):
@@ -67,7 +73,7 @@ def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', s
         def getSubKwd(newKwds, kwdStr, first):
             cnt = len(kwdStr)
             if cnt > 2:
-                for i in xrange(cnt-2):
+                for i in range(cnt-2):
                     getSubKwd(newKwds, kwdStr[i:cnt-1+i], False)
             if not first:
                 kw = ' '.join(kwdStr)
@@ -101,21 +107,21 @@ def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', s
         if syndic:
             masterKwds.update(syndic.keys(), syndic.values())
         print("adding new keywords to docs if they occur in the text (title+abstract)")
-        newkwds = addTextKeywords(df, masterKwds)
+        newkwds = addTextKeywords(df, masterKwds, all_text)
         df['newKwds'] = newkwds
         nKwHist = dict([item for item in Counter([k for kwList in newkwds for k in kwList]).most_common() if item[1] > 1])
         print("%d New Keywords that occur 2 or more times"%len(nKwHist))
     else:
         df['newKwds'] = df['kwds']
 
-    kwAttr = 'eKwds'
     if enhance:
         # split multi-word keywords and add sub-keywords if in the master keyword list
         print("enhancing multi-keywords with sub-keywords")
-        df[kwAttr] = enhanceKeywords(df, masterKwds)
+        df['eKwds'] = enhanceKeywords(df, masterKwds)
     else:
-        df[kwAttr] = df['newKwds']
-
+        df['eKwds'] = df['newKwds']
+    kwAttr = 'eKwds'
+    
     if syndic:
         # synonym dictionary is {term, commonterm}; map terms to common term
         df[kwAttr] = df[kwAttr].apply(lambda x: list(set([syndic[kw] if kw in syndic else kw for kw in x])))
@@ -123,6 +129,6 @@ def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', s
     # recompute histogram on enhanced set of keywords
     kwHist = dict([item for item in Counter([k for kwList in df[kwAttr] for k in kwList]).most_common() if item[1] > 1])
     print("%d Enhanced Keywords that occur 2 or more times"%len(kwHist))
-    df['enhanced_keywords'] = df['eKwds'].apply(lambda x: '|'.join(x))
+    df['enhanced_keywords'] = df[kwAttr].apply(lambda x: '|'.join(x))
     df.drop(['newKwds', 'kwds'], axis=1, inplace=True)
     return kwAttr

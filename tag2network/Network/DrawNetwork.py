@@ -205,7 +205,7 @@ def draw_nx_tapered_edges(G, pos,
     if not edgelist or len(edgelist) == 0:  # no edges!
         return None
 
-    if highlight is not None and (isinstance(edge_color, basestring) or not cb.iterable(edge_color)):
+    if highlight is not None and (isinstance(edge_color, str) or not cb.iterable(edge_color)):
         idMap = {}
         nodes = G.nodes()
         for i in range(len(nodes)):
@@ -237,16 +237,16 @@ def draw_nx_tapered_edges(G, pos,
 
     edge_vertices = np.asarray(edge_pos)
 
-    if not isinstance(edge_color, basestring) \
+    if not isinstance(edge_color, str) \
            and cb.iterable(edge_color) \
            and len(edge_color) == len(edge_vertices):
-        if np.alltrue([isinstance(c, basestring)
+        if np.alltrue([isinstance(c, str)
                          for c in edge_color]):
             # (should check ALL elements)
             # list of color letters such as ['k','r','k',...]
             edge_colors = tuple([colorConverter.to_rgba(c, alpha)
                                  for c in edge_color])
-        elif np.alltrue([not isinstance(c, basestring)
+        elif np.alltrue([not isinstance(c, str)
                            for c in edge_color]):
             # If color specs are given as (rgb) or (rgba) tuples, we're OK
             if np.alltrue([cb.iterable(c) and len(c) in (3, 4)
@@ -258,7 +258,7 @@ def draw_nx_tapered_edges(G, pos,
         else:
             raise ValueError('edge_color must consist of either color names or numbers')
     else:
-        if isinstance(edge_color, basestring) or len(edge_color) == 1:
+        if isinstance(edge_color, str) or len(edge_color) == 1:
             edge_colors = (colorConverter.to_rgba(edge_color, alpha), )
         else:
             raise ValueError('edge_color must be a single color or list of exactly m colors where m is the number or edges')
