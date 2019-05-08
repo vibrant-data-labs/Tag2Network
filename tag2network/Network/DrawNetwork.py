@@ -34,7 +34,7 @@ from matplotlib.colors import colorConverter, Colormap
 from matplotlib.collections import LineCollection
 from matplotlib.collections import PolyCollection
 import math
-
+import numbers
 import numpy as np
 import networkx as nx
 from networkx.drawing.nx_pylab import draw_networkx_labels
@@ -283,14 +283,9 @@ def draw_nx_tapered_edges(G, pos,
     edge_collection.set_label(label)
     ax.add_collection(edge_collection)
 
-    # Note: there was a bug in mpl regarding the handling of alpha values for
-    # each line in a LineCollection.  It was fixed in matplotlib in r7184 and
-    # r7189 (June 6 2009).  We should then not set the alpha value globally,
-    # since the user can instead provide per-edge alphas now.  Only set it
-    # globally if provided as a scalar.
-    if cb.is_numlike(alpha):
+    # Set alpha globally if provided as a scalar.
+    if isinstance(alpha, numbers.Number):
         edge_collection.set_alpha(alpha)
-
     if edge_colors is None:
         if edge_cmap is not None:
             assert(isinstance(edge_cmap, Colormap))

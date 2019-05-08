@@ -54,7 +54,7 @@ def simCosine(f):
     # compute feature matrix dot product
     fdot = np.array(f.dot(f.T).todense())
     # get inverse feature vector magnitudes
-    invMag = np.sqrt(np.array(1.0/np.diag(fdot)))
+    invMag = np.sqrt(np.divide(1.0, np.diag(fdot)))
     # set NaN to zero
     invMag[np.isinf(invMag)] = 0
     # get cosine sim by elementwise multiply by inverse magnitudes

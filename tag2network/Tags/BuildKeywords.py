@@ -16,7 +16,7 @@ from collections import Counter
 def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', 
                   syndic=None, addFromText=True, enhance=True, all_text=False):
     def addTextKeywords(df, allKwds, all_text):
-        stopwords = set(['a', 'the', 'this', 'that', 'and', 'or', 'of', 'not',
+        stopwords = set(['a', 'the', 'this', 'that', 'and', 'or', 'of', 'not', 'at',
                          'is', 'in', 'it', 'its', 'but', 'what', 'with', 'as', 'to',
                          'why', 'are', 'do', 'from', 'for'])
 
@@ -63,7 +63,7 @@ def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text',
         print ("matching text ngrams to master keyword list to get text keywords")
         textkwds = textngrams.apply(lambda x: findKeywords(x)) #add as keywords if in master list
         newkwds = df.kwds + textkwds  #add ngrams from text if in master kwd list
-        newkwds = newkwds.apply(lambda x: (set(x)))
+        newkwds = newkwds.apply(lambda x: (set(x))) # make sure keywords are unique
         return list(newkwds)
 
     # for each document, split multi-word keywords and for each group of fewer words,
@@ -84,7 +84,7 @@ def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text',
             newKwds = set()
             for kwd in kwds:
                 newKwds.add(kwd)
-                getSubKwd(newKwds, kwd.split(' '), True)
+                getSubKwd(newKwds, kwd.split(), True)
             enhancedKwds.append(list(newKwds))
         return enhancedKwds
 
