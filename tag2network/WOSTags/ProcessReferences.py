@@ -97,10 +97,10 @@ def processRawWoSData(path, namebase):
     def computeReferenceSimilarities(references):
         similarities = {}
         maxSim = 0
-        for nodeid, ref in references.iteritems():
+        for nodeid, ref in references.items():
             sim = similarities[nodeid] = {}
             refSet = set(ref.split(';'))
-            for nodeid2, ref2 in references.iteritems():
+            for nodeid2, ref2 in references.items():
                 if nodeid < nodeid2:
                     refSet2 = set(ref2.split(';'))
                     nTotal = len(refSet.union(refSet2))
@@ -128,7 +128,7 @@ def processRawWoSData(path, namebase):
     def processWoSData(dataFile, hasSearchType):
         # get used field names
         fields = []
-        for key, value in fieldInfo.iteritems():
+        for key, value in fieldInfo.items():
             if value['use'] is True:
                 fields.append(key)
 
@@ -184,7 +184,7 @@ def processRawWoSData(path, namebase):
 
         if hasSearchType:
             # count references to papers with different searchTypes
-            for nodeid, ref in references.iteritems():
+            for nodeid, ref in references.items():
                 nS = 0
                 nX = 0
                 nSX = 0

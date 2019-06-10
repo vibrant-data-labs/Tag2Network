@@ -16,9 +16,9 @@ from collections import Counter
 def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', 
                   syndic=None, addFromText=True, enhance=True, all_text=False):
     def addTextKeywords(df, allKwds, all_text):
-        stopwords = set(['a', 'the', 'this', 'that', 'and', 'or', 'of', 'not', 'at',
+        stopwords = set(['a', 'an', 'the', 'this', 'that', 'and', 'or', 'of', 'not', 'at',
                          'is', 'in', 'it', 'its', 'but', 'what', 'with', 'as', 'to',
-                         'why', 'are', 'do', 'from', 'for'])
+                         'why', 'are', 'do', 'from', 'for', 'on'])
 
         def findKeywords(ngrams):
             if all_text:
