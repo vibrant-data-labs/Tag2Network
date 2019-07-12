@@ -161,6 +161,7 @@ def buildNetworkFromNodesAndEdges(nodesdf, edgedf, outname=None,
 # build network helper function
 # thresholds similarity, computes clusters and other attributes, names clusters if applicable
 # draws network, saves plot and data to files
+# return nodesdf, edgedf
 def _buildNetworkHelper(df, sim, linksPer=4, outname=None,
                            nodesname=None, edgesname=None, plotfile=None,
                            doLayout=True, tagHist=None, tagAttr=None):
@@ -182,6 +183,7 @@ def _buildNetworkHelper(df, sim, linksPer=4, outname=None,
 # plotfile - name of file for plot image
 # doLayout - if true, run layout
 # draw - if True and if running layout, then draw the network and possibly save image to file (if plotfile is given)
+# return nodesdf, edgedf
 def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outname=None,
                         nodesname=None, edgesname=None, plotfile=None, idf=True,
                         toFile=True, doLayout=True):
@@ -217,7 +219,9 @@ def buildSimilarityNetwork(df, sim, color_attr="Cluster", outname=None,
                            toFile=toFile, doLayout=doLayout)
 
 # build link dataframe from matrix where non-zero element is a link
-def matrixToLinkDataFrame(mat):
+def matrixToLinkDataFrame(mat, undirected=True):
+    if undirected:  # make symmetric then take upper triangle
+        mat = np.triu(np.maximum(mat, mat.T))   
     links = np.transpose(np.nonzero(mat))
     linkList = [{'Source': l[0], 'Target': l[1]} for l in links]
     return pd.DataFrame(linkList)

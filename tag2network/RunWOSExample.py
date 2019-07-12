@@ -6,7 +6,7 @@ import os
 
 from WOSTags.MergeWOSFiles import mergeWOSFiles
 from WOSTags.ProcessReferences import processRawWoSData
-from WOSTags.ProcessReferences import filterDocuments
+from WOSTags.ProcessReferences import loadAndFilterDocuments
 from Tags.BuildKeywords import buildKeywords
 from Network.BuildNetwork import buildTagNetwork
 
@@ -31,8 +31,8 @@ whitelist = set([])
 fname = os.path.join(datapath, namebase+"Final.txt")
 
 # too many documents - keep a fraction of them by year and citation rate
-#df = filterDocuments(fname, 0.9)
-df = filterDocuments(fname, 0.1)    # for debugging so it runs faster
+#df = loadAndFilterDocuments(fname, 0.9)
+df = loadAndFilterDocuments(fname, 0.1)    # for debugging so it runs faster
 
 # set up output file names
 nwname = os.path.join(datapath, namebase+".xlsx")
@@ -46,4 +46,4 @@ kwAttr = buildKeywords(df, blacklist, whitelist)
 # build network linked by keyword similarity
 buildTagNetwork(df, kwAttr, dropCols=dropCols, outname=nwname,
                     nodesname=nodesname, edgesname=edgesname, plotfile=plotname,
-                    doLayout=True, draw=True)
+                    doLayout=True)#, draw=True)

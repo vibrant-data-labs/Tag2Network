@@ -196,9 +196,9 @@ def processRawWoSData(path, namebase):
                         if doiIndex.has_key(refDOI):    # reference is in this data set
                             id = doiIndex[refDOI]
                             searchType = data[id][sType]
-                            if searchType is 'S':
+                            if searchType == 'S':
                                 nS += 1
-                            elif searchType is 'X':
+                            elif searchType == 'X':
                                 nX += 1
                             else:
                                 nSX += 1
@@ -232,10 +232,10 @@ def processRawWoSData(path, namebase):
 
     processWoSData(dataFile, False)
 
-# keep a fraction of documents by year and citation rate
+# load document file, keep a fraction of documents by year and citation rate
 # sort by publication year and citation count
 # then iterate through each year keeping documents in each year with most citations
-def filterDocuments(fname, keepFrac):
+def loadAndFilterDocuments(fname, keepFrac):
     df = pd.read_csv(fname, sep='\t', header=0)
 
     if keepFrac < 1.0:

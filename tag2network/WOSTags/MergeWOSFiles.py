@@ -19,7 +19,7 @@ def mergeWOSFiles(datapath, filebase, outfile):
         print("Processing file %d %s"%(idx, fname))
         df = io.open(fname, 'r', encoding='utf-8')
         for lnum, li in enumerate(df):
-            if idx == 0 or lnum > 1:
+            if idx == 0 or lnum > 0:
                 of.writelines([li[0:131000]])
                 cnt += 1
         print("%d lines"%cnt)
