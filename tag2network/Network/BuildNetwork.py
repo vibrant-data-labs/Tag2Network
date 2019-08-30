@@ -162,12 +162,13 @@ def buildNetworkFromNodesAndEdges(nodesdf, edgedf, outname=None,
 # thresholds similarity, computes clusters and other attributes, names clusters if applicable
 # draws network, saves plot and data to files
 # return nodesdf, edgedf
-def _buildNetworkHelper(df, sim, linksPer=4, outname=None,
+def _buildNetworkHelper(df, sim, linksPer=linksPer, outname=None,
                            nodesname=None, edgesname=None, plotfile=None,
                            doLayout=True, tagHist=None, tagAttr=None):
     # threshold
-    print("Threshold similarity")
-    sim = threshold(sim, linksPer=linksPer)
+    if linksPer > 0:
+        print("Threshold similarity")
+        sim = threshold(sim, linksPer=linksPer)
     # make edge dataframe
     edgedf = matrixToLinkDataFrame(sim)
 
@@ -186,7 +187,7 @@ def _buildNetworkHelper(df, sim, linksPer=4, outname=None,
 # return nodesdf, edgedf
 def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outname=None,
                         nodesname=None, edgesname=None, plotfile=None, idf=True,
-                        toFile=True, doLayout=True):
+                        toFile=True, doLayout=True, linksPer=4):
     print("Building document network")
     tagHist = dict([item for item in Counter([k for kwList in df[tagAttr] for k in kwList]).most_common() if item[1] > 1])
     # build document-keywords feature matrix
@@ -200,7 +201,7 @@ def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outn
     df.drop(dropCols, axis=1, inplace=True)
     return _buildNetworkHelper(df, sim, outname=outname,
                            nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
-                           doLayout=doLayout, tagHist=tagHist, tagAttr=tagAttr)
+                           doLayout=doLayout, tagHist=tagHist, tagAttr=tagAttr, linksPer=linksPer)
 
 # build network given node dataframe and similarity matrix
 # color_attr is the attribute to color the nodes by
