@@ -162,7 +162,7 @@ def buildNetworkFromNodesAndEdges(nodesdf, edgedf, outname=None,
 # thresholds similarity, computes clusters and other attributes, names clusters if applicable
 # draws network, saves plot and data to files
 # return nodesdf, edgedf
-def _buildNetworkHelper(df, sim, linksPer=linksPer, outname=None,
+def _buildNetworkHelper(df, sim, linksPer=4, outname=None,
                            nodesname=None, edgesname=None, plotfile=None,
                            doLayout=True, tagHist=None, tagAttr=None):
     # threshold
@@ -187,9 +187,15 @@ def _buildNetworkHelper(df, sim, linksPer=linksPer, outname=None,
 # return nodesdf, edgedf
 def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outname=None,
                         nodesname=None, edgesname=None, plotfile=None, idf=True,
-                        toFile=True, doLayout=True, linksPer=4):
+                        toFile=True, doLayout=True, linksPer=4, minTags=0):
     print("Building document network")
+    df = df.copy()  # so passed-in dataframe is not altered
+    # make histogram of tag frequencies, only include tags with > 1 occurence
     tagHist = dict([item for item in Counter([k for kwList in df[tagAttr] for k in kwList]).most_common() if item[1] > 1])
+    # filter tags to only include 'active' tags - tags which occur twice or more in the doc set
+    df[tagAttr] = df[tagAttr].apply(lambda x: [k for k in x if k in tagHist])
+    # filter docs to only include docs with a minimum number of 'active' tags
+    df = df[df[tagAttr].apply(lambda x: len(x) >= minTags)]
     # build document-keywords feature matrix
     features = buildFeatures(df, tagHist, idf, tagAttr)
     # compute similarity

@@ -218,7 +218,7 @@ def draw_nx_tapered_edges(G, pos,
         edge_color = ecol
 
     # set edge positions
-    if not cb.iterable(width):
+    if not np.iterable(width):
         lw = np.full(len(edgelist), width)
     else:
         lw = width
@@ -238,7 +238,7 @@ def draw_nx_tapered_edges(G, pos,
     edge_vertices = np.asarray(edge_pos)
 
     if not isinstance(edge_color, str) \
-           and cb.iterable(edge_color) \
+           and np.iterable(edge_color) \
            and len(edge_color) == len(edge_vertices):
         if np.alltrue([isinstance(c, str)
                          for c in edge_color]):
