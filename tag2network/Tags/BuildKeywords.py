@@ -13,7 +13,7 @@ from collections import Counter
 # "enhance" # splits multi-word keywords and adds sub-keywords if in the master keyword list
 # syndic is a synonym dictionary {synonym:commonTerm} pairs
 # all_text == True keeps all text-derived ngrams instead of matching to master list
-def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text', 
+def buildKeywords(df, blacklist, whitelist, replace_with_space={}, kwAttr='keywords', txtAttr='text', 
                   syndic=None, addFromText=True, enhance=True, all_text=False):
     def addTextKeywords(df, allKwds, all_text):
         stopwords = set(['a', 'an', 'the', 'this', 'that', 'and', 'or', 'of', 'not', 'at',
@@ -93,6 +93,9 @@ def buildKeywords(df, blacklist, whitelist, kwAttr='keywords', txtAttr='text',
     kwds = kwds.apply(lambda x: [s.strip() for s in x if len(s) > 2])   # only keep kwds with 3 or more characters
     kwds = kwds.apply(lambda x: [s for s in x if s not in blacklist])   # only keep keywords not in blacklist
     kwds = kwds.apply(lambda x: [s.lower() for s in x]) # make all lower case
+    if len(replace_with_space) > 0:
+        sub_re = '['+ ''.join(replace_with_space)  +']'
+        kwds = kwds.apply(lambda x: [re.sub(sub_re, ' ', s) for s in x]) # add whitespace
     kwds = kwds.apply(lambda x: list(set(x))) # make sure keywords are unique
     df['kwds'] = kwds # each value is a list of keywords
 
