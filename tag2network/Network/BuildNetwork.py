@@ -62,6 +62,7 @@ def simCosine(f):
     return sim
 
 def threshold(sim, linksPer=4):
+    simvals = sim.copy()
     nnodes = sim.shape[0]
     targetL = nnodes*linksPer
     # threshold on minimum max similarity in each row, this keeps at least one link per row
@@ -84,7 +85,7 @@ def threshold(sim, linksPer=4):
         # in each row, set values below number to keep to zero
         for i in range(nnodes):
             sim[i][indices[i][:minelement[i]]] = 0.0
-    return sim
+    return simvals*sim
 
 # build cluster name based on keywords that occur commonly in the cluster
 # if wtd, then weigh keywords based on local frequency relative to global freq
@@ -226,11 +227,15 @@ def buildSimilarityNetwork(df, sim, color_attr="Cluster", outname=None,
                            toFile=toFile, doLayout=doLayout)
 
 # build link dataframe from matrix where non-zero element is a link
-def matrixToLinkDataFrame(mat, undirected=True):
+def matrixToLinkDataFrame(mat, undirected=True, include_weights=True):
     if undirected:  # make symmetric then take upper triangle
         mat = np.triu(np.maximum(mat, mat.T))   
     links = np.transpose(np.nonzero(mat))
     linkList = [{'Source': l[0], 'Target': l[1]} for l in links]
+    if include_weights:
+        linkList = [{'Source': l[0], 'Target': l[1], 'weight': mat[l[0], l[1]]} for l in links]
+    else:
+        linkList = [{'Source': l[0], 'Target': l[1]} for l in links]
     return pd.DataFrame(linkList)
 
 def buildNetworkX(linksdf, id1='Source', id2='Target', directed=False):
