@@ -220,14 +220,14 @@ def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outn
 # draw - if True and if running layout, then draw the network and possibly save image to file (if plotfile is given)
 def buildSimilarityNetwork(df, sim, color_attr="Cluster", outname=None,
                            nodesname=None, edgesname=None, plotfile=None,
-                           toFile=True, doLayout=True):
+                           toFile=True, doLayout=True, linksPer=4):
     df['id'] = range(len(df))
     return _buildNetworkHelper(df, sim, outname=outname,
                            nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
-                           toFile=toFile, doLayout=doLayout)
+                           toFile=toFile, doLayout=doLayout, linksPer=linksPer)
 
 # build link dataframe from matrix where non-zero element is a link
-def matrixToLinkDataFrame(mat, undirected=True, include_weights=True):
+def matrixToLinkDataFrame(mat, undirected=False, include_weights=True):
     if undirected:  # make symmetric then take upper triangle
         mat = np.triu(np.maximum(mat, mat.T))   
     links = np.transpose(np.nonzero(mat))
