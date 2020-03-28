@@ -70,7 +70,7 @@ def threshold(sim, linksPer=4):
     mxsim = sim.max(axis=0)
     thr = mxsim[mxsim > 0].min()
     sim[sim < thr] = 0.0
-    nL = sim.sum()
+    nL = (sim > 0).sum()
     # if too many links, keep equal fraction of links in each row,
     # minimally 1 per row, keep highest similarity links
     if nL > targetL:
@@ -79,7 +79,7 @@ def threshold(sim, linksPer=4):
         # sort the rows
         indices = np.argsort(sim, axis=1)
         # get number of elements in each row
-        nonzero = np.maximum(np.rint(frac * np.apply_along_axis(np.count_nonzero, 1, sim)), 1)
+        nonzero = np.round(np.maximum((frac*((sim > 0).sum(axis=1))), 1)).astype(int)
         # get minimum index to keep in each row
         minelement = (nnodes - nonzero).astype(int)
         # in each row, set values below number to keep to zero
