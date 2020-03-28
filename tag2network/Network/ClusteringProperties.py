@@ -26,7 +26,7 @@ def basicClusteringProperties(network, clustering):
     clusters = {}
     # iterate over each node
     for node in network:
-        nodedata = network.node[node]
+        nodedata = network.nodes[node]
         cluster = nodedata[clustering] if clustering in nodedata else None
         if cluster != None and cluster != '':
             # build list of nodes in each cluster
@@ -39,7 +39,7 @@ def basicClusteringProperties(network, clustering):
 
             # walk neighbors and save cluster info
             for neighbor in network.neighbors(node):
-                neighborCluster = network.node[neighbor][clustering]
+                neighborCluster = network.nodes[neighbor][clustering]
                 if neighborCluster not in clusterCounts:
                     clusterCounts[neighborCluster] = 0.0
                 clusterCounts[neighborCluster] += 1.0
