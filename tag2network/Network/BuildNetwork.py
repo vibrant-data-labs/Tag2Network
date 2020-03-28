@@ -44,9 +44,10 @@ def buildFeatures(df, tagHist, idf, tagAttr):
                 else:
                     features[row, tagIdx[tag]] = 1.0
         else:
-            print("Document with no tags (%s)"%tagAttr)
+            print("Document with no tags (%s)" % tagAttr)
         row += 1
     return csr_matrix(features)
+
 
 # compute cosine similarity
 # f is a (sparse) feature matrix
@@ -61,15 +62,14 @@ def simCosine(f):
     sim = (fdot * invMag).T * invMag
     return sim
 
+
 def threshold(sim, linksPer=4):
-    simvals = sim.copy()
     nnodes = sim.shape[0]
     targetL = nnodes*linksPer
     # threshold on minimum max similarity in each row, this keeps at least one link per row
     mxsim = sim.max(axis=0)
-    thr = mxsim[mxsim>0].min()
+    thr = mxsim[mxsim > 0].min()
     sim[sim < thr] = 0.0
-    sim[sim >= thr] = 1.0
     nL = sim.sum()
     # if too many links, keep equal fraction of links in each row,
     # minimally 1 per row, keep highest similarity links
@@ -85,12 +85,15 @@ def threshold(sim, linksPer=4):
         # in each row, set values below number to keep to zero
         for i in range(nnodes):
             sim[i][indices[i][:minelement[i]]] = 0.0
-    return simvals*sim
+    return sim
+
 
 # build cluster name based on keywords that occur commonly in the cluster
 # if wtd, then weigh keywords based on local frequency relative to global freq
-## NOTE TO RICH:  I ADDED HERE PARAMETERS TO NAME THE CLUSTER NAME AND TOP TAGS COLUMNS
-def buildClusterNames(df, allTagHist, tagAttr, clAttr='Cluster', clusterName='cluster_name', topTags='top_tags', wtd=True):
+# NOTE TO RICH:  I ADDED HERE PARAMETERS TO NAME THE CLUSTER NAME AND TOP TAGS COLUMNS
+def buildClusterNames(df, allTagHist, tagAttr, 
+                      clAttr='Cluster', clusterName='cluster_name', 
+                      topTags='top_tags', wtd=True):
     allVals = np.array(list(allTagHist.values()), dtype=float)
     allFreq = dict(zip(allTagHist.keys(), allVals/allVals.sum()))
     #clusters = df['clusId'].unique()
