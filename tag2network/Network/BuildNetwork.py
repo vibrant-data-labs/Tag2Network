@@ -97,17 +97,18 @@ def threshold(sim, linksPer=4, connect_isolated_pairs=True):
         # in each row, set values below number to keep to zero
         for i in range(nnodes):
             sim[i][indices[i][:minelement[i]]] = 0.0
-        # for isolated reciprocal pairs, keep next lower similarity link
-        # fisrt find all reciprocal pairs
-        upper = np.triu(sim)
-        recip = np.argwhere((upper > 0) & (np.isclose(upper, np.tril(sim).T, 1e-14)))
-        # get isolated reciprocal pairs
-        links = sim > 0
-        isolated = (links[recip[:, 0]].sum(axis=1) == 1) & (links[recip[:, 1]].sum(axis=1) == 1) 
-        # get all nodes involved in isolated pairs
-        isolated_recip = recip[isolated].flatten()
-        # add next most similar link        
-        sim[isolated_recip, indices[isolated_recip, -2]] = simvals[isolated_recip, indices[isolated_recip, -2]]
+        if connect_isolated_pairs:
+            # for isolated reciprocal pairs, keep next lower similarity link
+            # fisrt find all reciprocal pairs
+            upper = np.triu(sim)
+            recip = np.argwhere((upper > 0) & (np.isclose(upper, np.tril(sim).T, 1e-14)))
+            # get isolated reciprocal pairs
+            links = sim > 0
+            isolated = (links[recip[:, 0]].sum(axis=1) == 1) & (links[recip[:, 1]].sum(axis=1) == 1) 
+            # get all nodes involved in isolated pairs
+            isolated_recip = recip[isolated].flatten()
+            # add next most similar link        
+            sim[isolated_recip, indices[isolated_recip, -2]] = simvals[isolated_recip, indices[isolated_recip, -2]]
     return sim
 
 
