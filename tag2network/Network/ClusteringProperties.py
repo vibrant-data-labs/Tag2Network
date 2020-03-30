@@ -28,7 +28,7 @@ def basicClusteringProperties(network, clustering):
     for node in network:
         nodedata = network.nodes[node]
         cluster = nodedata[clustering] if clustering in nodedata else None
-        if cluster != None and cluster != '':
+        if cluster is not None and cluster != '':
             # build list of nodes in each cluster
             if cluster not in clusters:
                 clusters[cluster] = []

@@ -22,6 +22,7 @@ from Network.louvain import generate_dendrogram
 from Network.louvain import partition_at_level
 from Network.tSNELayout import runTSNELayout
 
+
 # build sparse feature matrix with optional idf weighting
 # each row is a document, each column is a tag
 # weighting assumes each term occurs once in each doc it appears in
@@ -63,7 +64,18 @@ def simCosine(f):
     return sim
 
 
-def threshold(sim, linksPer=4):
+def threshold(sim, linksPer=4, connect_isolated_pairs=True):
+    '''
+    threshold similarity matrix - threshold by minimum maximum similarity of each node. Then if there 
+    are too many links, thin links of each node propoertional to their abundance, but leave at least 
+    one link from each node
+    Parameters:
+        sim - the similarity matrix
+        linksPer - target connectivity
+        connect_isolated_pairs - if true, connect isolated reciprocal pairs of nodes to their next 
+        most similar neighbors
+    '''
+    simvals = sim.copy()
     nnodes = sim.shape[0]
     targetL = nnodes*linksPer
     # threshold on minimum max similarity in each row, this keeps at least one link per row
@@ -85,6 +97,17 @@ def threshold(sim, linksPer=4):
         # in each row, set values below number to keep to zero
         for i in range(nnodes):
             sim[i][indices[i][:minelement[i]]] = 0.0
+        # for isolated reciprocal pairs, keep next lower similarity link
+        # fisrt find all reciprocal pairs
+        upper = np.triu(sim)
+        recip = np.argwhere((upper > 0) & (np.isclose(upper, np.tril(sim).T, 1e-14)))
+        # get isolated reciprocal pairs
+        links = sim > 0
+        isolated = (links[recip[:, 0]].sum(axis=1) == 1) & (links[recip[:, 1]].sum(axis=1) == 1) 
+        # get all nodes involved in isolated pairs
+        isolated_recip = recip[isolated].flatten()
+        # add next most similar link        
+        sim[isolated_recip, indices[isolated_recip, -2]] = simvals[isolated_recip, indices[isolated_recip, -2]]
     return sim
 
 
@@ -110,7 +133,7 @@ def buildClusterNames(df, allTagHist, tagAttr,
                 vals = np.array(list(tagHist.values()), dtype=float)
                 freq = dict(zip(tagHist.keys(), vals/vals.sum()))
                 # weight tags, only include tag if it is more common than global
-                wtdTag = [(item[0], item[1]*math.sqrt(freq[item[0]]/allFreq[item[0]])) \
+                wtdTag = [(item[0], item[1]*math.sqrt(freq[item[0]]/allFreq[item[0]]))
                           for item in tagHist.most_common() if freq[item[0]] > allFreq[item[0]]]
                 wtdTag.sort(key=lambda x: x[1], reverse=True)
                 topTag = [item[0] for item in wtdTag[:10]]
@@ -126,17 +149,18 @@ def buildClusterNames(df, allTagHist, tagAttr,
             topTag = [k for k in topTag if k not in removeTag]
             # build and store name
             clName = ', '.join(topTag[:5])
-            df.loc[clusRows,clusterName] = clName
-            df.loc[clusRows,topTags] = ', '.join(topTag)
+            df.loc[clusRows, clusterName] = clName
+            df.loc[clusRows, topTags] = ', '.join(topTag)
             clusInfo.append((clus, nRows, clName))
     df[topTags] = df[topTags].str.split(',')
     clusInfo.sort(key=lambda x: x[1], reverse=True)
     for info in clusInfo:
-        print("Cluster %s, %d nodes, name: %s"%info)
+        print("Cluster %s, %d nodes, name: %s" % info)
+
 
 def buildNetworkFromNodesAndEdges(nodesdf, edgedf, outname=None,
-                           nodesname=None, edgesname=None, plotfile=None,
-                           doLayout=True, tagHist=None, tagAttr=None):
+                                  nodesname=None, edgesname=None, plotfile=None,
+                                  doLayout=True, tagHist=None, tagAttr=None):
     # add clusters and attributes
     nw = buildNetworkX(edgedf)
     addLouvainClusters(nodesdf, nw=nw)
@@ -151,24 +175,25 @@ def buildNetworkFromNodesAndEdges(nodesdf, edgedf, outname=None,
     # output to csv
     if nodesname is not None and edgesname is not None:
         print("Writing nodes and edges to files")
-        nodesdf.to_csv(nodesname,index=False)
-        edgedf.to_csv(edgesname,index=False)
+        nodesdf.to_csv(nodesname, index=False)
+        edgedf.to_csv(edgesname, index=False)
     # output to xlsx
     if outname is not None:
         print("Writing network to file")
         writer = pd.ExcelWriter(outname)
-        nodesdf.to_excel(writer,'Nodes',index=False)
-        edgedf.to_excel(writer,'Links',index=False)
+        nodesdf.to_excel(writer, 'Nodes', index=False)
+        edgedf.to_excel(writer, 'Links', index=False)
         writer.save()
     return nodesdf, edgedf
+
 
 # build network helper function
 # thresholds similarity, computes clusters and other attributes, names clusters if applicable
 # draws network, saves plot and data to files
 # return nodesdf, edgedf
 def _buildNetworkHelper(df, sim, linksPer=4, outname=None,
-                           nodesname=None, edgesname=None, plotfile=None,
-                           doLayout=True, tagHist=None, tagAttr=None):
+                        nodesname=None, edgesname=None, plotfile=None,
+                        doLayout=True, tagHist=None, tagAttr=None):
     # threshold
     if linksPer > 0:
         print("Threshold similarity")
@@ -177,8 +202,9 @@ def _buildNetworkHelper(df, sim, linksPer=4, outname=None,
     edgedf = matrixToLinkDataFrame(sim)
 
     return buildNetworkFromNodesAndEdges(df, edgedf, outname=outname,
-                           nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
-                           doLayout=doLayout, tagHist=tagHist, tagAttr=tagAttr)
+                                         nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
+                                         doLayout=doLayout, tagHist=tagHist, tagAttr=tagAttr)
+
 
 # build network, linking based on common tags, tag lists in column named tagAttr
 # color_attr - the attribute to color the nodes by
@@ -190,12 +216,13 @@ def _buildNetworkHelper(df, sim, linksPer=4, outname=None,
 # draw - if True and if running layout, then draw the network and possibly save image to file (if plotfile is given)
 # return nodesdf, edgedf
 def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outname=None,
-                        nodesname=None, edgesname=None, plotfile=None, idf=True,
-                        toFile=True, doLayout=True, linksPer=4, minTags=0):
+                    nodesname=None, edgesname=None, plotfile=None, idf=True,
+                    toFile=True, doLayout=True, linksPer=4, minTags=0):
     print("Building document network")
     df = df.copy()  # so passed-in dataframe is not altered
     # make histogram of tag frequencies, only include tags with > 1 occurence
-    tagHist = dict([item for item in Counter([k for kwList in df[tagAttr] for k in kwList]).most_common() if item[1] > 1])
+    tagHist = dict([item for item in Counter([k for kwList in df[tagAttr] 
+                                              for k in kwList]).most_common() if item[1] > 1])
     # filter tags to only include 'active' tags - tags which occur twice or more in the doc set
     df[tagAttr] = df[tagAttr].apply(lambda x: [k for k in x if k in tagHist])
     # filter docs to only include docs with a minimum number of 'active' tags
@@ -210,8 +237,9 @@ def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outn
     df['id'] = range(len(df))
     df.drop(dropCols, axis=1, inplace=True)
     return _buildNetworkHelper(df, sim, outname=outname,
-                           nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
-                           doLayout=doLayout, tagHist=tagHist, tagAttr=tagAttr, linksPer=linksPer)
+                               nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
+                               doLayout=doLayout, tagHist=tagHist, tagAttr=tagAttr, linksPer=linksPer)
+
 
 # build network given node dataframe and similarity matrix
 # color_attr is the attribute to color the nodes by
@@ -226,8 +254,9 @@ def buildSimilarityNetwork(df, sim, color_attr="Cluster", outname=None,
                            toFile=True, doLayout=True, linksPer=4):
     df['id'] = range(len(df))
     return _buildNetworkHelper(df, sim, outname=outname,
-                           nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
-                           toFile=toFile, doLayout=doLayout, linksPer=linksPer)
+                               nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
+                               toFile=toFile, doLayout=doLayout, linksPer=linksPer)
+
 
 # build link dataframe from matrix where non-zero element is a link
 def matrixToLinkDataFrame(mat, undirected=False, include_weights=True):
@@ -241,16 +270,19 @@ def matrixToLinkDataFrame(mat, undirected=False, include_weights=True):
         linkList = [{'Source': l[0], 'Target': l[1]} for l in links]
     return pd.DataFrame(linkList)
 
+
 def buildNetworkX(linksdf, id1='Source', id2='Target', directed=False):
     linkdata = [(getattr(link, id1), getattr(link, id2)) for link in linksdf.itertuples()]
     g = nx.DiGraph() if directed else nx.Graph()
     g.add_edges_from(linkdata)
     return g
 
+
 # add a computed network attribute to the node attribute table
 #
 def _add_attr(nodesdf, attr, vals):
     nodesdf[attr] = nodesdf['id'].map(vals)
+
 
 # add network structural attributes to nodesdf
 # clusVar is the attribute to use for computing bridging etc
@@ -266,11 +298,12 @@ def addNetworkAttributes(nodesdf, linksdf=None, nw=None, groupVars=["Cluster"], 
     # add bridging, cluster centrality etc. for one or more grouping variables
     for groupVar in groupVars:
         if len(nx.get_node_attributes(nw, groupVar)) == 0:
-            vals = {k:v for k,v in dict(zip(nodesdf['id'], nodesdf[groupVar])).items() if k in nw}
+            vals = {k: v for k, v in dict(zip(nodesdf['id'], nodesdf[groupVar])).items() if k in nw}
             nx.set_node_attributes(nw, vals, groupVar)
         grpprop = cp.basicClusteringProperties(nw, groupVar)
         for prop, vals in grpprop.items():
             _add_attr(nodesdf, prop, vals)
+
 
 # compute and add Louvain clusters to node dataframe
 def addLouvainClusters(nodesdf, linksdf=None, nw=None, clusterLevel=0):
@@ -300,6 +333,7 @@ def addLouvainClusters(nodesdf, linksdf=None, nw=None, clusterLevel=0):
     for grp, vals in clusterings.items():
         _add_attr(nodesdf, grp, vals)
         nodesdf[grp].fillna('No Cluster', inplace=True)
+
 
 def add_layout(nodesdf, linksdf=None, nw=None):
     print("Running graph layout")
