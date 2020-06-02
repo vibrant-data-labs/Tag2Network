@@ -14,7 +14,7 @@ from collections import Counter
 # syndic is a synonym dictionary {synonym:commonTerm} pairs
 # all_text == True keeps all text-derived ngrams instead of matching to master list
 def buildKeywords(df, blacklist, whitelist, replace_with_space={}, kwAttr='keywords', txtAttr='text', 
-                  syndic=None, addFromText=True, enhance=True, all_text=False):
+                  syndic=None, addFromText=True, enhance=True, all_text=False, include_unigrams=False):
     def addTextKeywords(df, allKwds, all_text):
         stopwords = set(['a', 'an', 'the', 'this', 'that', 'and', 'or', 'of', 'not', 'at',
                          'is', 'in', 'it', 'its', 'but', 'what', 'with', 'as', 'to',
@@ -54,7 +54,8 @@ def buildKeywords(df, blacklist, whitelist, replace_with_space={}, kwAttr='keywo
                     wordlists.append(currentlist)
             ngrams = []
             for wordlist in wordlists:
-                #ngrams.extend(wordlist)  #include all unigrams
+                if include_unigrams:
+                    ngrams.extend(wordlist)  #include all unigrams
                 ngrams.extend(add23Grams(wordlist))
             return ngrams
 
