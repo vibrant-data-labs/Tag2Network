@@ -337,7 +337,7 @@ def addLouvainClusters(nodesdf, linksdf=None, nw=None, clusterLevel=0):
 
 
 def add_layout(nodesdf, linksdf=None, nw=None):
-    print("Running graph layout")
+    print("Running tsne graph layout")
     if nw is None:
         nw = buildNetworkX(linksdf)
     layout, _ = runTSNELayout(nw)
@@ -346,3 +346,11 @@ def add_layout(nodesdf, linksdf=None, nw=None):
     nodesdf['y'] = nodesdf['id'].apply(lambda x: layout[x][1] if x in layout else 0.0)
     return layout
 
+def add_force_directed_layout(nodesdf, linksdf=None, nw=None, iterations=100):
+    print("Running force-directed graph layout")
+    if nw is None:
+        nw = buildNetworkX(linksdf)
+    layout = nx.spring_layout(nw, iterations=iterations)
+    nodesdf['x_force_directed'] = nodesdf['id'].apply(lambda x: layout[x][0] if x in layout else 0.0)
+    nodesdf['y_force_directed'] = nodesdf['id'].apply(lambda x: layout[x][1] if x in layout else 0.0)
+    return layout

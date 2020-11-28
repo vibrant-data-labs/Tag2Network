@@ -441,9 +441,9 @@ def getCategoricalColors(nw, df, node_attr, node_vals, color_edges, colors, edge
 # optional list of node_attr values allows drawing network with predefined attribute value ordering
 # so multiple images can have the same color scheme
 # if plotfile is given, image is written to file
-def draw_network_categorical(nw, df, node_attr='Cluster', node_vals=None, node_size=30,
+def draw_network_categorical(nw, df, node_attr='Cluster', x='x', y='y', node_vals=None, node_size=30,
                              plotfile=None, colors=None, title=None, color_edges=True):
-    layout = dict(zip(df.id, list(zip(df.x, df.y))))
+    layout = dict(zip(df.id, list(zip(df[x], df[y]))))
     node_colors, edge_colors, attr_colors = getCategoricalColors(nw, df, node_attr, node_vals, color_edges, None)
     # plot network
     fig = plt.figure(figsize=(10,8), tight_layout={'rect': (0, 0, 0.8, 1)})
