@@ -35,7 +35,7 @@ def runTSNELayout(nw, dists=None, maxdist=5):
     # compute tSNE
     print("Computing tSNE")
     layout = TSNE(n_components=2, metric='precomputed',
-                  early_exaggeration=5, perplexity=perp).fit_transform(dists)
+                  early_exaggeration=5, perplexity=perp, square_distances=True).fit_transform(dists)
     # build the output data structure
     nodes = nw.nodes()
     nodeMap = dict(zip(nodes, range(len(nodes))))
