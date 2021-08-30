@@ -17,7 +17,7 @@ def basicClusteringProperties(network, clustering):
     adds results to node attributes
     """
     if clustering == 'Cluster':
-        properties = ['InterclusterFraction', 'ClusterDiversity', 'ClusterBridging', 'ClusterArchetype']
+        properties = ['InterclusterFraction', 'ClusterDiversity', 'ClusterBridging', 'ClusterCentrality']
     else:
         properties = ['fracIntergroup_' + clustering, 'diversity_' + clustering, 'bridging_' + clustering,
                       'centrality_' + clustering]

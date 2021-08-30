@@ -6,8 +6,6 @@ Created on Thu Jun 30 14:41:04 2016
 
 Modified and extended networkx drawing code
 
-"""
-
 #    Copyright (C) 2004-2016 by
 #    Aric Hagberg <hagberg@lanl.gov>
 #    Dan Schult <dschult@colgate.edu>
@@ -16,7 +14,7 @@ Modified and extended networkx drawing code
 #    BSD license.
 #
 # Author: Aric Hagberg (hagberg@lanl.gov)
-"""
+
 **********
 Matplotlib
 **********
@@ -319,18 +317,18 @@ def draw_nx_tapered_edges(G, pos,
     return edge_collection
 
 def draw_nx_nodes(G, pos,
-                        nodelist=None,
-                        node_size=300,
-                        node_color='r',
-                        node_shape='o',
-                        highlight=None,
-                        cmap=None,
-                        vmin=None,
-                        vmax=None,
-                        ax=None,
-                        linewidths=0.5,
-                        label=None,
-                        **kwds):
+                  nodelist=None,
+                  node_size=300,
+                  node_color='r',
+                  node_shape='o',
+                  highlight=None,
+                  cmap=None,
+                  vmin=None,
+                  vmax=None,
+                  ax=None,
+                  linewidths=0.5,
+                  label=None,
+                  **kwds):
     """Draw the nodes of the graph G.
     This draws only the nodes of the graph G.
     Parameters
@@ -383,7 +381,6 @@ def draw_nx_nodes(G, pos,
     draw_networkx_labels()
     draw_networkx_edge_labels()
     """
-
     if ax is None:
         ax = plt.gca()
 
@@ -396,7 +393,7 @@ def draw_nx_nodes(G, pos,
     try:
         xy = np.asarray([pos[v] for v in nodelist])
     except KeyError as e:
-        raise nx.NetworkXError('Node %s has no position.'%e)
+        raise nx.NetworkXError('Node %s has no position.' % e)
     except ValueError:
         raise nx.NetworkXError('Bad value in node positions.')
 
