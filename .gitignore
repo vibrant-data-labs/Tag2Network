@@ -1,5 +1,6 @@
 *.pyc
 .spyproject
+/build/
 
 /dist/
 /*.egg-info
