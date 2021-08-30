@@ -10,7 +10,6 @@ from setuptools import setup
 from setuptools import find_packages
 
 setup(name='tag2network',
-      version='0.0.6',
       description='Build similarity network from tagged documents',
       long_description="Build similarity network from any dataset where a set of keywords or other \
                           tags is assigned to each document. The network is build by computing \
