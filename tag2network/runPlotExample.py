@@ -5,8 +5,8 @@ import pandas as pd
 #from DrawNetwork import draw_network_categorical
 from Network.InteractiveNetworkViz import drawInteractiveNW
 
-nodesfile = "Data/Example/ExampleNodes.csv"
-edgesfile = "Data/Example/ExampleEdges.csv"
+nodesfile = "tag2network/Data/Example/ExampleNodes.csv"
+edgesfile = "tag2network/Data/Example/ExampleEdges.csv"
 
 nodesdf = pd.read_csv(nodesfile)
 edgesdf = pd.read_csv(edgesfile)

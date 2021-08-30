@@ -12,7 +12,7 @@ from bokeh.core.properties import field
 
 #from bokeh.palettes import Spectral8
 
-import DrawNetwork as dn
+import Network.DrawNetwork as dn
 
 # draw network using categorical attribute for node colors
 # draw using Bokeh

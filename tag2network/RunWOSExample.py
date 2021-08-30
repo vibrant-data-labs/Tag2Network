@@ -43,7 +43,8 @@ plotname = os.path.join(datapath, namebase+"Plot.pdf")
 # build and enhance the keywords, add to df
 kwAttr = buildKeywords(df, blacklist, whitelist)
 
+
 # build network linked by keyword similarity
 buildTagNetwork(df, kwAttr, dropCols=dropCols, outname=nwname,
                     nodesname=nodesname, edgesname=edgesname, plotfile=plotname,
-                    doLayout=True)#, draw=True)
+                    doLayout=True, clusteredLayout=True)#, draw=True)

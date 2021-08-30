@@ -41,11 +41,14 @@ from networkx.drawing.nx_pylab import draw_networkx_labels
 
 __all__ = ['_draw_networkx_']
 
-def _draw_networkx_(G, pos=None, with_labels=True, **kwds):
+
+def _draw_networkx_(G, pos=None, with_labels=True, draw_edges=True, **kwds):
     """Draw the graph G using Matplotlib.
+
     Draw the graph with Matplotlib with options for node positions,
     labeling, titles, and many other drawing features.
     See draw() for simple drawing without labels or axes.
+
     Parameters
     ----------
     G : graph
@@ -129,27 +132,31 @@ def _draw_networkx_(G, pos=None, with_labels=True, **kwds):
         pos = nx.drawing.spring_layout(G)  # default to spring layout
 
     draw_nx_nodes(G, pos, **kwds)
-    draw_nx_tapered_edges(G, pos, **kwds)
+    if draw_edges:
+        draw_nx_tapered_edges(G, pos, **kwds)
     if with_labels:
         draw_networkx_labels(G, pos, **kwds)
     plt.draw_if_interactive()
 
+
 def draw_nx_tapered_edges(G, pos,
-                        edgelist=None,
-                        width=0.5,
-                        edge_color='k',
-                        style='solid',
-                        alpha=1.0,
-                        edge_cmap=None,
-                        edge_vmin=None,
-                        edge_vmax=None,
-                        ax=None,
-                        label=None,
-                        highlight=None,
-                        tapered=False,
-                        **kwds):
+                          edgelist=None,
+                          width=0.5,
+                          edge_color='k',
+                          style='solid',
+                          alpha=1.0,
+                          edge_cmap=None,
+                          edge_vmin=None,
+                          edge_vmax=None,
+                          ax=None,
+                          label=None,
+                          highlight=None,
+                          tapered=False,
+                          **kwds):
     """Draw the edges of the graph G.
+
     This draws only the edges of the graph G.
+
     Parameters
     ----------
     G : graph
@@ -423,9 +430,11 @@ def getCategoricalColors(nw, df, node_attr, node_vals, color_edges, colors, edge
     counts = df[node_attr].value_counts()
     # color nodes by attribute
     if node_vals is not None:
-        attr_colors = {val: colors[idx%len(colors)] for idx, val in enumerate(node_vals)}
+        #attr_colors = {val: colors[idx%len(colors)] else 'gray' for idx, val in enumerate(node_vals)}
+        attr_colors = {val: colors[idx] if idx < len(colors) else 'gray' for idx, val in enumerate(node_vals)}
     else:
-        attr_colors = {val: colors[idx%len(colors)] for idx, val in enumerate(counts.index)}
+        #attr_colors = {val: colors[idx%len(colors)] for idx, val in enumerate(counts.index)}
+        attr_colors = {val: colors[idx] if idx < len(colors) else 'gray' for idx, val in enumerate(counts.index)}
     node_color_map = dict(zip(df['id'], df[node_attr].map(attr_colors)))
     node_colors = [node_color_map[node] for node in nw.nodes()]
     # color edges
@@ -442,7 +451,7 @@ def getCategoricalColors(nw, df, node_attr, node_vals, color_edges, colors, edge
 # so multiple images can have the same color scheme
 # if plotfile is given, image is written to file
 def draw_network_categorical(nw, df, node_attr='Cluster', node_vals=None, node_size=30,
-                             plotfile=None, colors=None, title=None, color_edges=True):
+                             plotfile=None, colors=None, title=None, color_edges=True, draw_edges=True):
     layout = dict(zip(df.id, list(zip(df.x, df.y))))
     node_colors, edge_colors, attr_colors = getCategoricalColors(nw, df, node_attr, node_vals, color_edges, None)
     # plot network
@@ -450,7 +459,7 @@ def draw_network_categorical(nw, df, node_attr='Cluster', node_vals=None, node_s
     plt.axis('off')
     _draw_networkx_(nw, layout, arrow=False,
                      with_labels=False, node_color=node_colors,
-                     edge_color=edge_colors, node_size=node_size)
+                     edge_color=edge_colors, node_size=node_size, draw_edges=draw_edges)
     if title is not None:
         plt.gca().set_title(title)
     # add legend

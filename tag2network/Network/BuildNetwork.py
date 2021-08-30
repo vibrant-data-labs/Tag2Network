@@ -20,7 +20,8 @@ from Network.DrawNetwork import draw_network_categorical
 #from InteractiveNetworkViz import drawInteractiveNW
 from Network.louvain import generate_dendrogram
 from Network.louvain import partition_at_level
-from Network.tSNELayout import runTSNELayout
+from Network.tSNELayout import runTSNELayout, runUMAPlayout
+from Network.ClusterLayout import run_cluster_layout
 
 
 # build sparse feature matrix with optional idf weighting
@@ -161,7 +162,8 @@ def buildClusterNames(df, allTagHist, tagAttr,
 
 def buildNetworkFromNodesAndEdges(nodesdf, edgedf, outname=None,
                                   nodesname=None, edgesname=None, plotfile=None,
-                                  doLayout=True, tagHist=None, tagAttr=None):
+                                  doLayout=True, clusteredLayout=False,
+                                  tagHist=None, tagAttr=None):
     # add clusters and attributes
     nw = buildNetworkX(edgedf)
     addLouvainClusters(nodesdf, nw=nw)
@@ -169,10 +171,10 @@ def buildNetworkFromNodesAndEdges(nodesdf, edgedf, outname=None,
     if tagHist and tagAttr:
         buildClusterNames(nodesdf, tagHist, tagAttr)
     if doLayout:
-        add_layout(nodesdf, nw=nw)
+        add_layout(nodesdf, nw=nw, clustered=clusteredLayout)
         if plotfile is not None:
             #drawInteractiveNW(df, nw=nw, plotfile=plotfile)
-            draw_network_categorical(nw, nodesdf, plotfile=plotfile)
+            draw_network_categorical(nw, nodesdf, plotfile=plotfile, draw_edges=False)
     # output to csv
     if nodesname is not None and edgesname is not None:
         print("Writing nodes and edges to files")
@@ -194,7 +196,7 @@ def buildNetworkFromNodesAndEdges(nodesdf, edgedf, outname=None,
 # return nodesdf, edgedf
 def _buildNetworkHelper(df, sim, linksPer=4, outname=None,
                         nodesname=None, edgesname=None, plotfile=None,
-                        doLayout=True, tagHist=None, tagAttr=None):
+                        doLayout=True, clusteredLayout=False, tagHist=None, tagAttr=None):
     # threshold
     if linksPer > 0:
         print("Threshold similarity")
@@ -204,7 +206,8 @@ def _buildNetworkHelper(df, sim, linksPer=4, outname=None,
 
     return buildNetworkFromNodesAndEdges(df, edgedf, outname=outname,
                                          nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
-                                         doLayout=doLayout, tagHist=tagHist, tagAttr=tagAttr)
+                                         doLayout=doLayout, clusteredLayout=clusteredLayout,
+                                         tagHist=tagHist, tagAttr=tagAttr)
 
 
 # build network, linking based on common tags, tag lists in column named tagAttr
@@ -218,7 +221,7 @@ def _buildNetworkHelper(df, sim, linksPer=4, outname=None,
 # return nodesdf, edgedf
 def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outname=None,
                     nodesname=None, edgesname=None, plotfile=None, idf=True,
-                    toFile=True, doLayout=True, linksPer=4, minTags=0):
+                    toFile=True, doLayout=True, clusteredLayout=False, linksPer=4, minTags=0):
     print("Building document network")
     df = df.copy()  # so passed-in dataframe is not altered
     # make histogram of tag frequencies, only include tags with > 1 occurence
@@ -239,7 +242,8 @@ def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outn
     df.drop(dropCols, axis=1, inplace=True)
     return _buildNetworkHelper(df, sim, outname=outname,
                                nodesname=nodesname, edgesname=edgesname, plotfile=plotfile,
-                               doLayout=doLayout, tagHist=tagHist, tagAttr=tagAttr, linksPer=linksPer)
+                               doLayout=doLayout, clusteredLayout=clusteredLayout,
+                               tagHist=tagHist, tagAttr=tagAttr, linksPer=linksPer)
 
 
 # build network given node dataframe and similarity matrix
@@ -336,13 +340,18 @@ def addLouvainClusters(nodesdf, linksdf=None, nw=None, clusterLevel=0):
         nodesdf[grp].fillna('No Cluster', inplace=True)
 
 
-def add_layout(nodesdf, linksdf=None, nw=None):
+def add_layout(nodesdf, linksdf=None, nw=None, clustered=True):
     print("Running graph layout")
     if nw is None:
         nw = buildNetworkX(linksdf)
-    layout, _ = runTSNELayout(nw)
+    if clustered:
+        # layout, _ = runTSNELayout(nw, nodesdf=nodesdf, cluster='Cluster')
+        # layout, _ = runUMAPlayout(nw, nodesdf=nodesdf, cluster='Cluster')
+        layout, _ = run_cluster_layout(nw, nodes_df=nodesdf, cluster='Cluster')
+    else:
+        layout, _ = runTSNELayout(nw)
+        # layout, _ = runUMAPlayout(nw)
     #layout = nx.spring_layout(nw, iterations=25)
     nodesdf['x'] = nodesdf['id'].apply(lambda x: layout[x][0] if x in layout else 0.0)
     nodesdf['y'] = nodesdf['id'].apply(lambda x: layout[x][1] if x in layout else 0.0)
     return layout
-
