@@ -15,6 +15,7 @@ from scipy.sparse import dok_matrix
 from scipy.sparse import csr_matrix
 import networkx as nx
 
+'''
 import Network.ClusteringProperties as cp
 from Network.DrawNetwork import draw_network_categorical
 #from InteractiveNetworkViz import drawInteractiveNW
@@ -22,6 +23,14 @@ from Network.louvain import generate_dendrogram
 from Network.louvain import partition_at_level
 from Network.tSNELayout import runTSNELayout, runUMAPlayout
 from Network.ClusterLayout import run_cluster_layout
+'''
+
+import ClusteringProperties as cp
+from DrawNetwork import draw_network_categorical
+from louvain import generate_dendrogram
+from louvain import partition_at_level
+from tSNELayout import runTSNELayout, runUMAPlayout
+from ClusterLayout import run_cluster_layout
 
 
 # build sparse feature matrix with optional idf weighting
@@ -340,14 +349,14 @@ def addLouvainClusters(nodesdf, linksdf=None, nw=None, clusterLevel=0):
         nodesdf[grp].fillna('No Cluster', inplace=True)
 
 
-def add_layout(nodesdf, linksdf=None, nw=None, clustered=True):
+def add_layout(nodesdf, linksdf=None, nw=None, clustered=True, cluster='Cluster'):
     print("Running graph layout")
     if nw is None:
         nw = buildNetworkX(linksdf)
     if clustered:
         # layout, _ = runTSNELayout(nw, nodesdf=nodesdf, cluster='Cluster')
         # layout, _ = runUMAPlayout(nw, nodesdf=nodesdf, cluster='Cluster')
-        layout, _ = run_cluster_layout(nw, nodes_df=nodesdf, cluster='Cluster')
+        layout, _ = run_cluster_layout(nw, nodes_df=nodesdf, cluster=cluster)
     else:
         layout, _ = runTSNELayout(nw)
         # layout, _ = runUMAPlayout(nw)
