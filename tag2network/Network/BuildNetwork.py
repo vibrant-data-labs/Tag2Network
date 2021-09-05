@@ -354,11 +354,11 @@ def add_layout(nodesdf, linksdf=None, nw=None, clustered=True, cluster='Cluster'
     if nw is None:
         nw = buildNetworkX(linksdf)
     if clustered:
-        # layout, _ = runTSNELayout(nw, nodesdf=nodesdf, cluster='Cluster')
-        # layout, _ = runUMAPlayout(nw, nodesdf=nodesdf, cluster='Cluster')
+        #layout, _ = runTSNELayout(nw, nodesdf=nodesdf, cluster='Cluster')
+        #layout, _ = runUMAPlayout(nw, nodesdf=nodesdf, cluster='Cluster')
         layout, _ = run_cluster_layout(nw, nodes_df=nodesdf, cluster=cluster)
     else:
-        layout, _ = runTSNELayout(nw)
+        layout, _ = runTSNELayout(nw, nodesdf=nodesdf)
         # layout, _ = runUMAPlayout(nw)
     nodesdf['x'] = nodesdf['id'].apply(lambda x: layout[x][0] if x in layout else 0.0)
     nodesdf['y'] = nodesdf['id'].apply(lambda x: layout[x][1] if x in layout else 0.0)
