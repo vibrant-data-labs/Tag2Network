@@ -5,10 +5,9 @@ import numpy as np
 import networkx as nx
 import scipy.sparse as sps
 from sklearn.manifold import TSNE
-import umap
 
 
-def _setup_layout_dists(nw, nodesdf, dists, maxdist, cluster):
+def setup_layout_distances(nw, nodesdf, dists, maxdist, cluster):
     def computeShortPathUpToMax(adj, maxlen):
         dist = np.empty(adj.shape)
         dist.fill(-1)   # initialize to -1 - any element with -1 hasn't been filled yet
@@ -56,7 +55,7 @@ def runTSNELayout(nw, nodesdf=None, dists=None, maxdist=5, cluster=None):
         return np.stack([x_pos, y_pos]).T
 
     print("Running tSNE layout")
-    dists, clus = _setup_layout_dists(nw, nodesdf, dists, maxdist, cluster)
+    dists, clus = setup_layout_dists(nw, nodesdf, dists, maxdist, cluster)
     perp = min(50, nw.number_of_nodes()/10)
     # compute tSNE
     print("Computing tSNE")
@@ -67,19 +66,5 @@ def runTSNELayout(nw, nodesdf=None, dists=None, maxdist=5, cluster=None):
     nodeMap = dict(zip(nodes, range(len(nodes))))
     layout_dict = {node: layout[nodeMap[node]] for node in nodes}
     print("Done running tSNE layout")
-    # return both networkx style dict and array of positions
-    return layout_dict, layout
-
-
-def runUMAPlayout(nw, nodesdf=None, dists=None, maxdist=5, cluster=None):
-    print("Running UMAP layout")
-    dists, clus = _setup_layout_dists(nw, nodesdf, dists, maxdist, cluster)
-    model = umap.UMAP(metric='precomputed')
-    layout = model.fit_transform(dists)
-    # build the output data structure
-    nodes = nw.nodes()
-    nodeMap = dict(zip(nodes, range(len(nodes))))
-    layout_dict = {node: layout[nodeMap[node]] for node in nodes}
-    print("Done running UMAP layout")
     # return both networkx style dict and array of positions
     return layout_dict, layout

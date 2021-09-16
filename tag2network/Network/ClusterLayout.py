@@ -92,9 +92,9 @@ def remove_overlap(nodes):
     return {n['name']: np.array([n['x'], n['y']]) for n in nodes}
 
 
-def compress_groups(nw, nodes_df, layout_dict, cluster, no_overlap,
+def compress_groups(nw, nodes_df, layout_dict, cluster_attr, no_overlap,
                     max_expansion=1.5, scale_factor=1.0):
-    clus_nodes = nodes_df.groupby(cluster)
+    clus_nodes = nodes_df.groupby(cluster_attr)
     subgraphs = {clus: cdf.id.to_list() for clus, cdf in clus_nodes}
     new_positions = {}
     clusters = []
@@ -142,9 +142,37 @@ def compress_groups(nw, nodes_df, layout_dict, cluster, no_overlap,
     return new_positions
 
 
-def run_cluster_layout(nw, nodes_df, dists=None, maxdist=5, cluster='Cluster', no_overlap=True):
-    layout_dict, layout = runTSNELayout(nw, nodes_df, dists, maxdist, cluster)
-    clus_nodes = nodes_df.groupby(cluster)
+def run_cluster_layout(nw, nodes_df, dists=None, maxdist=5, cluster_attr='Cluster',
+                       no_overlap=True, max_expansion=1.5, scale_factor=1.0):
+    """
+    Pull nodes in clusters in tSNE layout into visually coherent groups.
+
+    1) tSNE on whole network
+    2) Kamada-Kawai on each cluster
+    3) Pull 'distant nodes in to limit total radius of each cluster
+    4) (Optional) GTree to minimally move clsuters to eliminate overlap
+
+
+    Args:
+        nw (TYPE): The network to lay out as a networkx Graph.
+        nodes_df (TYPE): The node data in a pandas DataFrame.
+        dists (TYPE, optional): Distance matrix, if none path length is used to compute distances.
+                                Defaults to None.
+        maxdist (TYPE, optional): Maximum path length to consider when computing path-based distances.
+                                  Defaults to 5.
+        cluster_attr (TYPE, optional): The attribute used to define the clusters. Defaults to 'Cluster'.
+        no_overlap (TYPE, optional): If True, do not remove cluster overlap. Defaults to True.
+        max_expansion (TYPE, optional): Internode distance expansion at the center of each cluster. Defaults to 1.5.
+        scale_factor (TYPE, optional): Cluster area scale factor. Defaults to 1.0.
+
+    Returns
+    -------
+        new_positions (TYPE): DESCRIPTION.
+        layout (TYPE): DESCRIPTION.
+
+    """
+    layout_dict, layout = runTSNELayout(nw, nodes_df, dists, maxdist, cluster_attr)
+    clus_nodes = nodes_df.groupby(cluster_attr)
     subgraphs = {clus: nw.subgraph(cdf.id.to_list()) for clus, cdf in clus_nodes}
     new_positions = {}
     for clus, subg in subgraphs.items():
@@ -159,7 +187,8 @@ def run_cluster_layout(nw, nodes_df, dists=None, maxdist=5, cluster='Cluster', n
                                          scale=scale,
                                          center=center)
         new_positions.update(new_pos)
-    new_positions = compress_groups(nw, nodes_df, new_positions, cluster, no_overlap)
+    new_positions = compress_groups(nw, nodes_df, new_positions, cluster_attr,
+                                    no_overlap, max_expansion, scale_factor)
     layout = [new_positions[idx] for idx in layout_dict.keys()]
     return new_positions, layout
 
