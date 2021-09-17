@@ -1,3 +1,5 @@
+# To update the pypi package:
+# You need an account at pypi.org and to be added to the project
 #
 # increment version
 # remove egg info, dist
@@ -10,7 +12,7 @@ from setuptools import setup
 from setuptools import find_packages
 
 setup(name='tag2network',
-      version='0.0.7',
+      version='0.0.8',
       description='Build similarity network from tagged documents',
       long_description="Build similarity network from any dataset where a set of keywords or other \
                           tags is assigned to each document. The network is build by computing \
