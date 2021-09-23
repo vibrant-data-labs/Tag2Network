@@ -144,7 +144,7 @@ def compress_groups(nw, nodes_df, layout_dict, cluster_attr, no_overlap,
 
 
 def run_cluster_layout(nw, nodes_df, dists=None, maxdist=5, cluster_attr='Cluster',
-                       no_overlap=True, max_expansion=1.5, scale_factor=1.0):
+                       size_attr=None, no_overlap=True, max_expansion=1.5, scale_factor=1.0):
     """
     Pull nodes in clusters in tSNE layout into visually coherent groups.
 
@@ -175,6 +175,12 @@ def run_cluster_layout(nw, nodes_df, dists=None, maxdist=5, cluster_attr='Cluste
     layout_dict, layout = runTSNELayout(nw, nodes_df, dists, maxdist, cluster_attr)
     clus_nodes = nodes_df.groupby(cluster_attr)
     subgraphs = {clus: nw.subgraph(cdf.id.to_list()) for clus, cdf in clus_nodes}
+    # compute sizing scale factor for each cluster
+    if size_attr is not None:
+        mean_size = nodes_df[size_attr].mean()
+        clus_scale = {clus: cdf[size_attr].mean() / mean_size for clus, cdf in clus_nodes}
+    else:
+        clus_scale = {1 for clus in clus_nodes.keys()}
     new_positions = {}
     for clus, subg in subgraphs.items():
         print(f"Laying out subgraph for {clus}")
@@ -183,7 +189,7 @@ def run_cluster_layout(nw, nodes_df, dists=None, maxdist=5, cluster_attr='Cluste
         clus_pos = np.array(list(pos.values()))
         # get cluster centroid
         center = np.median(clus_pos, axis=0)
-        scale = np.sqrt(len(subg))
+        scale = np.sqrt(len(subg)) * clus_scale[clus]
         new_pos = nx.kamada_kawai_layout(subg, pos=pos, weight=None,
                                          scale=scale,
                                          center=center)
@@ -192,6 +198,8 @@ def run_cluster_layout(nw, nodes_df, dists=None, maxdist=5, cluster_attr='Cluste
                                     no_overlap, max_expansion, scale_factor)
     layout = [new_positions[idx] for idx in layout_dict.keys()]
     return new_positions, layout
+
+
 
 
 if __name__ == "__main__":
