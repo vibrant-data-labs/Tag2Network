@@ -29,7 +29,8 @@ import ClusteringProperties as cp
 from DrawNetwork import draw_network_categorical
 from louvain import generate_dendrogram
 from louvain import partition_at_level
-from tSNELayout import runTSNELayout, runUMAPlayout
+from tSNELayout import runTSNELayout
+#from UMAPLayout import runUMAPlayout
 from ClusterLayout import run_cluster_layout
 
 
