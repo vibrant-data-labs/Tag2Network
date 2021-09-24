@@ -24,7 +24,8 @@ def setup_layout_distances(nw, nodesdf, dists, maxdist, cluster):
         print("Computing shortest paths")
         dists = computeShortPathUpToMax(nx.adjacency_matrix(nw), maxdist)
     # reduce path length if the nodes are in the same cluster
-    clus = nodesdf.Cluster.copy().sort_index().to_numpy()
+    #clus = nodesdf.Cluster.copy().sort_index().to_numpy()
+    clus = nodesdf[cluster].copy().sort_index().to_numpy()
     if nodesdf is not None and cluster in nodesdf:
         adj = nx.adjacency_matrix(nw).todense()
         for edge in nw.edges:
@@ -55,7 +56,7 @@ def runTSNELayout(nw, nodesdf=None, dists=None, maxdist=5, cluster=None):
         return np.stack([x_pos, y_pos]).T
 
     print("Running tSNE layout")
-    dists, clus = setup_layout_dists(nw, nodesdf, dists, maxdist, cluster)
+    dists, clus = setup_layout_distances(nw, nodesdf, dists, maxdist, cluster)
     perp = min(50, nw.number_of_nodes()/10)
     # compute tSNE
     print("Computing tSNE")
