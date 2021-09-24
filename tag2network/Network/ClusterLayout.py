@@ -132,8 +132,8 @@ def compress_groups(nw, nodes_df, layout_dict, cluster_attr, no_overlap,
         dists = np.sqrt(((clus_pos - center) ** 2).sum(axis=1))
         # use a truncated, normalized Mechelis-Menten function
         # to rescale distance from center
-        om = max(dists)
-        nm = scale
+        om = max(dists)  # current max distance
+        nm = scale  # desired max distance
         k = om * nm / (om - nm / 2)
         rescale = np.clip(k / (k / 2 + dists), None, max_expansion)
         center = centers[clus]
@@ -180,7 +180,7 @@ def run_cluster_layout(nw, nodes_df, dists=None, maxdist=5, cluster_attr='Cluste
         mean_size = nodes_df[size_attr].mean()
         clus_scale = {clus: cdf[size_attr].mean() / mean_size for clus, cdf in clus_nodes}
     else:
-        clus_scale = {1 for clus in clus_nodes.keys()}
+        clus_scale = {1 for clus in subgraphs.keys()}
     new_positions = {}
     for clus, subg in subgraphs.items():
         print(f"Laying out subgraph for {clus}")
