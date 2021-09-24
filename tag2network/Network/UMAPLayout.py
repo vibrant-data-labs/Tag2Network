@@ -1,7 +1,7 @@
 
 import umap
-from Network.tSNELayout import setup_layout_dists
-
+#from Network.tSNELayout import setup_layout_dists
+from tSNELayout import setup_layout_dists
 
 def runUMAPlayout(nw, nodesdf=None, dists=None, maxdist=5, cluster=None):
     print("Running UMAP layout")
