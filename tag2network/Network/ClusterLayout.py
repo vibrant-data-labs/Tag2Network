@@ -196,7 +196,8 @@ def run_cluster_layout(nw, nodes_df, dists=None, maxdist=5, cluster_attr='Cluste
         new_positions.update(new_pos)
     new_positions = compress_groups(nw, nodes_df, new_positions, cluster_attr,
                                     no_overlap, max_expansion, scale_factor)
-    layout = [new_positions[idx] for idx in layout_dict.keys()]
+    #layout = [new_positions[idx] for idx in layout_dict.keys()]
+    layout = [list(new_positions[idx]) for idx in layout_dict.keys()]
     return new_positions, layout
 
 
