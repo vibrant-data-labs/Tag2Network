@@ -1,11 +1,11 @@
 
 import umap
-#from Network.tSNELayout import setup_layout_dists
-from tSNELayout import setup_layout_dists
+from Network.tSNELayout import setup_layout_distances
+#from tSNELayout import setup_layout_dists
 
 def runUMAPlayout(nw, nodesdf=None, dists=None, maxdist=5, cluster=None):
     print("Running UMAP layout")
-    dists, clus = setup_layout_dists(nw, nodesdf, dists, maxdist, cluster)
+    dists, clus = setup_layout_distances(nw, nodesdf, dists, maxdist, cluster)
     model = umap.UMAP(metric='precomputed')
     layout = model.fit_transform(dists)
     # build the output data structure

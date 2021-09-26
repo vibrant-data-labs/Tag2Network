@@ -6,21 +6,21 @@ Modified tSNE layout to pull clusters together into visually coherent groups.
 3) Pull 'distant nodes in to limit total radius of each cluster
 4) (Optional) GTree to move clsuters to eliminate overlap
 """
-#from Network.tSNELayout import runTSNELayout
-from tSNELayout import runTSNELayout 
+from Network.tSNELayout import runTSNELayout
+#from tSNELayout import runTSNELayout 
 import networkx as nx
 import numpy as np
 import scipy as sp
 
 
-def remove_overlap(nodes):
+def _remove_overlap(nodes, overlap_frac):
     """Implement GTree algorithm https://arxiv.org/pdf/1608.02653.pdf."""
     nodes = [n.copy() for n in nodes]
 
     def dist(idx1, idx2, pos, nodes):
         d = pos[idx1] - pos[idx2]
         center_to_center = np.sqrt((d * d).sum())
-        return center_to_center - nodes[idx1]['radius'] - nodes[idx2]['radius']
+        return center_to_center - (1.0 - overlap_frac) * (nodes[idx1]['radius'] + nodes[idx2]['radius'])
 
     def get_next(mst, previous, current):
         edges = list(mst.edges(current))
@@ -93,8 +93,8 @@ def remove_overlap(nodes):
     return {n['name']: np.array([n['x'], n['y']]) for n in nodes}
 
 
-def compress_groups(nw, nodes_df, layout_dict, cluster_attr, no_overlap,
-                    max_expansion=1.5, scale_factor=1.0):
+def _compress_groups(nw, nodes_df, layout_dict, cluster_attr, overlap_frac,
+                    max_expansion, scale_factor):
     clus_nodes = nodes_df.groupby(cluster_attr)
     subgraphs = {clus: cdf.id.to_list() for clus, cdf in clus_nodes}
     new_positions = {}
@@ -117,8 +117,8 @@ def compress_groups(nw, nodes_df, layout_dict, cluster_attr, no_overlap,
     # move cluster centers to remove overlap
     print("Repositioning cluster centers")
     centers = {cl['name']: (cl['x'], cl['y']) for cl in clusters}
-    if no_overlap:
-        new_centers = remove_overlap(clusters)
+    if overlap_frac < 1.0:
+        new_centers = _remove_overlap(clusters, overlap_frac)
     else:
         new_centers = centers
     print("Compressing layout of nodes in clusters")
@@ -144,7 +144,8 @@ def compress_groups(nw, nodes_df, layout_dict, cluster_attr, no_overlap,
 
 
 def run_cluster_layout(nw, nodes_df, dists=None, maxdist=5, cluster_attr='Cluster',
-                       size_attr=None, no_overlap=True, max_expansion=1.5, scale_factor=1.0):
+                       size_attr=None, overlap_frac=0.2,
+                       max_expansion=1.5, scale_factor=1.0):
     """
     Pull nodes in clusters in tSNE layout into visually coherent groups.
 
@@ -162,9 +163,9 @@ def run_cluster_layout(nw, nodes_df, dists=None, maxdist=5, cluster_attr='Cluste
         maxdist (TYPE, optional): Maximum path length to consider when computing path-based distances.
                                   Defaults to 5.
         cluster_attr (TYPE, optional): The attribute used to define the clusters. Defaults to 'Cluster'.
-        no_overlap (TYPE, optional): If True, do not remove cluster overlap. Defaults to True.
-        max_expansion (TYPE, optional): Internode distance expansion at the center of each cluster. Defaults to 1.5.
-        scale_factor (TYPE, optional): Cluster area scale factor. Defaults to 1.0.
+        overlap_frac (float, optional): Fraction of overlap that is left. If 1, no overlap removal. Defaults to 0.
+        max_expansion (float, optional): Internode distance expansion at the center of each cluster. Defaults to 1.5.
+        scale_factor (float, optional): Cluster area scale factor. Defaults to 1.0.
 
     Returns
     -------
@@ -180,7 +181,7 @@ def run_cluster_layout(nw, nodes_df, dists=None, maxdist=5, cluster_attr='Cluste
         mean_size = nodes_df[size_attr].mean()
         clus_scale = {clus: cdf[size_attr].mean() / mean_size for clus, cdf in clus_nodes}
     else:
-        clus_scale = {1 for clus in subgraphs.keys()}
+        clus_scale = {clus: 1 for clus in subgraphs.keys()}
     new_positions = {}
     for clus, subg in subgraphs.items():
         print(f"Laying out subgraph for {clus}")
@@ -194,12 +195,10 @@ def run_cluster_layout(nw, nodes_df, dists=None, maxdist=5, cluster_attr='Cluste
                                          scale=scale,
                                          center=center)
         new_positions.update(new_pos)
-    new_positions = compress_groups(nw, nodes_df, new_positions, cluster_attr,
-                                    no_overlap, max_expansion, scale_factor)
+    new_positions = _compress_groups(nw, nodes_df, new_positions, cluster_attr,
+                                     overlap_frac, max_expansion, scale_factor)
     layout = [new_positions[idx] for idx in layout_dict.keys()]
     return new_positions, layout
-
-
 
 
 if __name__ == "__main__":
@@ -231,4 +230,4 @@ if __name__ == "__main__":
          }
         ]
 
-    new_centers = remove_overlap(init_nodes)
+    new_centers = _remove_overlap(init_nodes, 0)

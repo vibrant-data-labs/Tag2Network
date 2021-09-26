@@ -15,13 +15,14 @@ from scipy.sparse import dok_matrix
 from scipy.sparse import csr_matrix
 import networkx as nx
 
-'''
+
 import Network.ClusteringProperties as cp
 from Network.DrawNetwork import draw_network_categorical
 #from InteractiveNetworkViz import drawInteractiveNW
 from Network.louvain import generate_dendrogram
 from Network.louvain import partition_at_level
-from Network.tSNELayout import runTSNELayout, runUMAPlayout
+from Network.tSNELayout import runTSNELayout
+from Network.UMAPLayout import runUMAPlayout
 from Network.ClusterLayout import run_cluster_layout
 '''
 
@@ -32,7 +33,7 @@ from louvain import partition_at_level
 from tSNELayout import runTSNELayout
 #from UMAPLayout import runUMAPlayout
 from ClusterLayout import run_cluster_layout
-
+'''
 
 # build sparse feature matrix with optional idf weighting
 # each row is a document, each column is a tag
@@ -357,7 +358,7 @@ def add_layout(nodesdf, linksdf=None, nw=None, clustered=True, cluster='Cluster'
     if clustered:
         #layout, _ = runTSNELayout(nw, nodesdf=nodesdf, cluster='Cluster')
         #layout, _ = runUMAPlayout(nw, nodesdf=nodesdf, cluster='Cluster')
-        layout, _ = run_cluster_layout(nw, nodes_df=nodesdf, cluster=cluster)
+        layout, _ = run_cluster_layout(nw, nodes_df=nodesdf, cluster_attr=cluster)
     else:
         layout, _ = runTSNELayout(nw, nodesdf=nodesdf)
         # layout, _ = runUMAPlayout(nw)
