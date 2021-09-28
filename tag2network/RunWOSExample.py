@@ -1,14 +1,13 @@
-# -*- coding: utf-8 -*-
 #
 # build similarity network from Web of Science data
 
 import os
 
-from WOSTags.MergeWOSFiles import mergeWOSFiles
-from WOSTags.ProcessReferences import processRawWoSData
-from WOSTags.ProcessReferences import loadAndFilterDocuments
-from Tags.BuildKeywords import buildKeywords
-from Network.BuildNetwork import buildTagNetwork
+from tag2network.WOSTags.MergeWOSFiles import mergeWOSFiles
+from tag2network.WOSTags.ProcessReferences import processRawWoSData
+from tag2network.WOSTags.ProcessReferences import loadAndFilterDocuments
+from tag2network.Tags.BuildKeywords import buildKeywords
+from tag2network.Network.BuildNetwork import buildTagNetwork
 
 # columns to delete in the output
 dropCols = ['text', 'AuKeywords', 'KeywordsPlus', 'keywords']
@@ -31,7 +30,7 @@ whitelist = set([])
 fname = os.path.join(datapath, namebase+"Final.txt")
 
 # too many documents - keep a fraction of them by year and citation rate
-#df = loadAndFilterDocuments(fname, 0.9)
+# df = loadAndFilterDocuments(fname, 0.9)
 df = loadAndFilterDocuments(fname, 0.1)    # for debugging so it runs faster
 
 # set up output file names
@@ -46,5 +45,5 @@ kwAttr = buildKeywords(df, blacklist, whitelist)
 
 # build network linked by keyword similarity
 buildTagNetwork(df, kwAttr, dropCols=dropCols, outname=nwname,
-                    nodesname=nodesname, edgesname=edgesname, plotfile=plotname,
-                    doLayout=True, clusteredLayout=True)#, draw=True)
+                nodesname=nodesname, edgesname=edgesname, plotfile=plotname,
+                doLayout=True, clusteredLayout=True)  # , draw=True)

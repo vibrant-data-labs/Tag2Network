@@ -6,7 +6,7 @@ Modified tSNE layout to pull clusters together into visually coherent groups.
 3) Pull 'distant nodes in to limit total radius of each cluster
 4) (Optional) GTree to move clsuters to eliminate overlap
 """
-from Network.tSNELayout import runTSNELayout
+from tag2network.Network.tSNELayout import runTSNELayout
 #from tSNELayout import runTSNELayout 
 import networkx as nx
 import numpy as np

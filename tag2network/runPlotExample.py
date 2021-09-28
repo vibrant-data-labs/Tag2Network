@@ -2,8 +2,7 @@
 
 import pandas as pd
 
-#from DrawNetwork import draw_network_categorical
-from Network.InteractiveNetworkViz import drawInteractiveNW
+from tag2network.Network.InteractiveNetworkViz import drawInteractiveNW
 
 nodesfile = "tag2network/Data/Example/ExampleNodes.csv"
 edgesfile = "tag2network/Data/Example/ExampleEdges.csv"

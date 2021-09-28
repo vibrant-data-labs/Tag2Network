@@ -1,6 +1,6 @@
 
 import umap
-from Network.tSNELayout import setup_layout_distances
+from tag2network.Network.tSNELayout import setup_layout_distances
 #from tSNELayout import setup_layout_dists
 
 def runUMAPlayout(nw, nodesdf=None, dists=None, maxdist=5, cluster=None):
