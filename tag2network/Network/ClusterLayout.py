@@ -52,8 +52,8 @@ def _remove_overlap(nodes, overlap_frac):
                 dx = trg_node['x'] - src_node['x']
                 dy = trg_node['y'] - src_node['y']
                 dist = np.sqrt(dx ** 2 + dy ** 2)
-                frac_x = dx / dist
-                frac_y = dy / dist
+                frac_x = dx / dist if dist != 0 else 0
+                frac_y = dy / dist if dist != 0 else 0
                 wt = mst.edges[(current, next_n)]['weight']
                 delta_x = -wt * frac_x
                 delta_y = -wt * frac_y
