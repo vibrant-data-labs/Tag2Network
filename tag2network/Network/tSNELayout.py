@@ -30,7 +30,7 @@ def setup_layout_distances(nw, nodesdf, dists, maxdist, cluster):
         adj = nx.adjacency_matrix(nw).todense()
         for edge in nw.edges:
             adj[edge] = clus[edge[0]] == clus[edge[1]]
-        dists = dists - (adj / 1.5)
+        dists = np.clip(dists - (adj / 1.5), 0, None)
     return dists, clus
 
 
