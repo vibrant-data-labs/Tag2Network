@@ -24,13 +24,16 @@ def setup_layout_distances(nw, nodesdf, dists, maxdist, cluster):
         print("Computing shortest paths")
         dists = computeShortPathUpToMax(nx.adjacency_matrix(nw), maxdist)
     # reduce path length if the nodes are in the same cluster
-    #clus = nodesdf.Cluster.copy().sort_index().to_numpy()
-    clus = nodesdf[cluster].copy().sort_index().to_numpy()
     if nodesdf is not None and cluster in nodesdf:
-        adj = nx.adjacency_matrix(nw).todense()
+        node_idx = {idx: list(nw.nodes).index(idx) for idx in nw.nodes}
+        clus = nodesdf.loc[list(nw.nodes)][cluster].sort_index().to_numpy()
+        adj = nx.adjacency_matrix(nw, nodelist=nw.nodes).todense()
         for edge in nw.edges:
-            adj[edge] = clus[edge[0]] == clus[edge[1]]
+            a_edge = (node_idx[edge[0]], node_idx[edge[1]])
+            adj[a_edge] = clus[a_edge[0]] == clus[a_edge[1]]
         dists = np.clip(dists - (adj / 1.5), 0, None)
+    else:
+        clus = None
     return dists, clus
 
 

@@ -146,8 +146,10 @@ def buildClusterNames(df, allTagHist, tagAttr,
             removeTag = set()
             for tag in topTag:
                 tags = tag.split(' ')
-                if len(tags) > 1 and all(k in topSet for k in tags):
-                    removeTag.update(tags)
+                if len(tags) > 1:
+                    for tag in tags:
+                        if tag in topSet:
+                            removeTag.add(tag)
             topTag = [k for k in topTag if k not in removeTag]
             # build and store name
             clName = ', '.join(topTag[:5])

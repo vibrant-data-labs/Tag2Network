@@ -94,7 +94,7 @@ def _remove_overlap(nodes, overlap_frac):
 
 
 def _compress_groups(nw, nodes_df, layout_dict, cluster_attr, overlap_frac,
-                    max_expansion, scale_factor):
+                     max_expansion, scale_factor):
     clus_nodes = nodes_df.groupby(cluster_attr)
     subgraphs = {clus: cdf.id.to_list() for clus, cdf in clus_nodes}
     new_positions = {}
@@ -102,18 +102,19 @@ def _compress_groups(nw, nodes_df, layout_dict, cluster_attr, overlap_frac,
     clus_id = 0
     for clus, subg in subgraphs.items():
         # get starting positions (from tSNE layout)
-        pos = {k: layout_dict[k] for k in subg}
-        clus_pos = np.array(list(pos.values()))
-        # get cluster centroid, final scale and distance from center
-        center = np.median(clus_pos, axis=0)
-        scale = np.sqrt(len(subg)) * scale_factor
-        # add cluster node
-        clusters.append({'id': clus_id,
-                         'name': clus,
-                         'x': center[0],
-                         'y': center[1],
-                         'radius': scale})
-        clus_id += 1
+        pos = {k: layout_dict[k] for k in subg if k in layout_dict}
+        if len(pos) > 0:
+            clus_pos = np.array(list(pos.values()))
+            # get cluster centroid, final scale and distance from center
+            center = np.median(clus_pos, axis=0)
+            scale = np.sqrt(len(subg)) * scale_factor
+            # add cluster node
+            clusters.append({'id': clus_id,
+                             'name': clus,
+                             'x': center[0],
+                             'y': center[1],
+                             'radius': scale})
+            clus_id += 1
     # move cluster centers to remove overlap
     print("Repositioning cluster centers")
     centers = {cl['name']: (cl['x'], cl['y']) for cl in clusters}
@@ -124,22 +125,23 @@ def _compress_groups(nw, nodes_df, layout_dict, cluster_attr, overlap_frac,
     print("Compressing layout of nodes in clusters")
     for clus, subg in subgraphs.items():
         # get starting positions (from tSNE layout)
-        pos = {k: layout_dict[k] for k in subg}
-        clus_pos = np.array(list(pos.values()))
-        # get cluster centroid, final scale and distance from center
-        center = np.median(clus_pos, axis=0)
-        scale = np.sqrt(len(subg)) * scale_factor
-        dists = np.sqrt(((clus_pos - center) ** 2).sum(axis=1))
-        # use a truncated, normalized Mechelis-Menten function
-        # to rescale distance from center
-        om = max(dists)  # current max distance
-        nm = scale  # desired max distance
-        k = om * nm / (om - nm / 2)
-        rescale = np.clip(k / (k / 2 + dists), None, max_expansion)
-        center = centers[clus]
-        new_center = new_centers[clus]
-        new_pos = new_center + ((clus_pos - center) * rescale.reshape(-1, 1))
-        new_positions.update(dict(zip(pos.keys(), new_pos)))
+        pos = {k: layout_dict[k] for k in subg if k in layout_dict}
+        if len(pos) > 0:
+            clus_pos = np.array(list(pos.values()))
+            # get cluster centroid, final scale and distance from center
+            center = np.median(clus_pos, axis=0)
+            scale = np.sqrt(len(subg)) * scale_factor
+            dists = np.sqrt(((clus_pos - center) ** 2).sum(axis=1))
+            # use a truncated, normalized Mechelis-Menten function
+            # to rescale distance from center
+            om = max(dists)  # current max distance
+            nm = scale  # desired max distance
+            k = om * nm / (om - nm / 2)
+            rescale = np.clip(k / (k / 2 + dists), None, max_expansion)
+            center = centers[clus]
+            new_center = new_centers[clus]
+            new_pos = new_center + ((clus_pos - center) * rescale.reshape(-1, 1))
+            new_positions.update(dict(zip(pos.keys(), new_pos)))
     return new_positions
 
 
@@ -184,17 +186,18 @@ def run_cluster_layout(nw, nodes_df, dists=None, maxdist=5, cluster_attr='Cluste
         clus_scale = {clus: 1 for clus in subgraphs.keys()}
     new_positions = {}
     for clus, subg in subgraphs.items():
-        print(f"Laying out subgraph for {clus}")
-        # get starting positions (from tSNE layout)
-        pos = {k: layout_dict[k] for k in subg.nodes}
-        clus_pos = np.array(list(pos.values()))
-        # get cluster centroid
-        center = np.median(clus_pos, axis=0)
-        scale = np.sqrt(len(subg)) * clus_scale[clus]
-        new_pos = nx.kamada_kawai_layout(subg, pos=pos, weight=None,
-                                         scale=scale,
-                                         center=center)
-        new_positions.update(new_pos)
+        if len(subg) > 0:
+            print(f"Laying out subgraph for {clus}")
+            # get starting positions (from tSNE layout)
+            pos = {k: layout_dict[k] for k in subg.nodes}
+            clus_pos = np.array(list(pos.values()))
+            # get cluster centroid
+            center = np.median(clus_pos, axis=0)
+            scale = np.sqrt(len(subg)) * clus_scale[clus]
+            new_pos = nx.kamada_kawai_layout(subg, pos=pos, weight=None,
+                                             scale=scale,
+                                             center=center)
+            new_positions.update(new_pos)
     new_positions = _compress_groups(nw, nodes_df, new_positions, cluster_attr,
                                      overlap_frac, max_expansion, scale_factor)
     layout = [list(new_positions[idx]) for idx in layout_dict.keys()]
