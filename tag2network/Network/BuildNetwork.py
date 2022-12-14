@@ -119,6 +119,9 @@ def threshold(sim, linksPer=4, connect_isolated_pairs=True):
 def buildClusterNames(df, allTagHist, tagAttr, 
                       clAttr='Cluster', clusterName='cluster_name', 
                       topTags='top_tags', wtd=True):
+    if allTagHist is None:
+        allTagHist = dict([item for item in Counter([k for kwList in df[tagAttr] 
+                        for k in kwList]).most_common() if item[1] > 1])
     allVals = np.array(list(allTagHist.values()), dtype=float)
     allFreq = dict(zip(allTagHist.keys(), allVals/allVals.sum()))
     #clusters = df['clusId'].unique()
