@@ -64,7 +64,7 @@ def runTSNELayout(nw, nodesdf=None, dists=None, maxdist=5, cluster=None):
     # compute tSNE
     print("Computing tSNE")
     layout = TSNE(n_components=2, metric='precomputed', init=initial_positions(clus),
-                  early_exaggeration=5, perplexity=perp).fit_transform(dists)
+                  early_exaggeration=5, perplexity=perp).fit_transform(np.asarray(dists))
     # build the output data structure
     nodes = nw.nodes()
     nodeMap = dict(zip(nodes, range(len(nodes))))
