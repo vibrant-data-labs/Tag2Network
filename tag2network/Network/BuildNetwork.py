@@ -119,6 +119,10 @@ def threshold(sim, linksPer=4, connect_isolated_pairs=True):
 def buildClusterNames(df, allTagHist, tagAttr, 
                       clAttr='Cluster', clusterName='cluster_name', 
                       topTags='top_tags', wtd=True):
+    # this function requires tagAttr values are lists, not | delimited strings
+    if type(df[tagAttr].iloc[0]) == str:
+        df = df.copy()
+        df[tagAttr] = df[tagAttr].str.split('|')
     if allTagHist is None:
         allTagHist = dict([item for item in Counter([k for kwList in df[tagAttr] 
                         for k in kwList]).most_common() if item[1] > 1])
