@@ -121,10 +121,11 @@ def buildClusterNames(df, allTagHist, tagAttr,
                       topTags='top_tags', wtd=True):
     # this function requires tagAttr values are lists, not | delimited strings
     if type(df[tagAttr].iloc[0]) == str:
-        df = df.copy()
-        df[tagAttr] = df[tagAttr].str.split('|')
+        taglists = df[tagAttr].str.split('|')
+    else:
+        taglists = df[tagAttr]
     if allTagHist is None:
-        allTagHist = dict([item for item in Counter([k for kwList in df[tagAttr] 
+        allTagHist = dict([item for item in Counter([k for kwList in taglists 
                         for k in kwList]).most_common() if item[1] > 1])
     allVals = np.array(list(allTagHist.values()), dtype=float)
     allFreq = dict(zip(allTagHist.keys(), allVals/allVals.sum()))
@@ -137,7 +138,7 @@ def buildClusterNames(df, allTagHist, tagAttr,
         clusRows = df[clAttr] == clus
         nRows = clusRows.sum()
         if nRows > 0:
-            tagHist = Counter([k for tagList in df[tagAttr][clusRows] for k in tagList if k in allTagHist])
+            tagHist = Counter([k for tagList in taglists[clusRows] for k in tagList if k in allTagHist])
             if wtd:
                 vals = np.array(list(tagHist.values()), dtype=float)
                 freq = dict(zip(tagHist.keys(), vals/vals.sum()))
