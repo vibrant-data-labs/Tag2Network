@@ -2,7 +2,7 @@
 #
 #
 # Build network from similarity matrix by thresholding
-# or from matrix of possibly weighted connections 
+# or from matrix of possibly weighted connections
 #
 # Add data to nodes - cluster, netowrk proerties, layout coordinates
 #
@@ -10,6 +10,7 @@
 import numpy as np
 import pandas as pd
 import math
+from collections import defaultdict
 from collections import Counter
 from scipy.sparse import dok_matrix
 from scipy.sparse import csr_matrix
@@ -105,31 +106,45 @@ def threshold(sim, linksPer=4, connect_isolated_pairs=True):
             recip = np.argwhere((upper > 0) & (np.isclose(upper, np.tril(sim).T, 1e-14)))
             # get isolated reciprocal pairs
             links = sim > 0
-            isolated = (links[recip[:, 0]].sum(axis=1) == 1) & (links[recip[:, 1]].sum(axis=1) == 1) 
+            isolated = (links[recip[:, 0]].sum(axis=1) == 1) & (links[recip[:, 1]].sum(axis=1) == 1)
             # get all nodes involved in isolated pairs
             isolated_recip = recip[isolated].flatten()
-            # add next most similar link        
+            # add next most similar link
             sim[isolated_recip, indices[isolated_recip, -2]] = simvals[isolated_recip, indices[isolated_recip, -2]]
     return sim
 
 
 # build cluster name based on keywords that occur commonly in the cluster
 # if wtd, then weigh keywords based on local frequency relative to global freq
-# NOTE TO RICH:  I ADDED HERE PARAMETERS TO NAME THE CLUSTER NAME AND TOP TAGS COLUMNS
-def buildClusterNames(df, allTagHist, tagAttr, 
-                      clAttr='Cluster', clusterName='cluster_name', 
+def buildClusterNames(df, allTagHist, tagAttr, tag_count_attr=None,
+                      clAttr='Cluster', clusterName='cluster_name',
                       topTags='top_tags', wtd=True):
-    # this function requires tagAttr values are lists, not | delimited strings
-    if type(df[tagAttr].iloc[0]) == str:
-        taglists = df[tagAttr].str.split('|')
+
+    def merge_tag_count_tuples(col):
+        # each item has a list of (tag, count) tuples. Merge these to get the global histogram of tag counts
+        dd = defaultdict(int)
+
+        def merge_tuples(vals):
+            for k, v in vals:
+                dd[k] += v
+        col.apply(merge_tuples)
+        return [(k, v) for k, v in dd.items()]
+
+    if tag_count_attr is not None:
+        # use (tag, count) tuples
+        allTagHist = dict([item for item in merge_tag_count_tuples(df[tag_count_attr]) if item[1] > 1])
+        taglists = df[tag_count_attr].apply(lambda x: [val[0] for val in x])
     else:
-        taglists = df[tagAttr]
-    if allTagHist is None:
-        allTagHist = dict([item for item in Counter([k for kwList in taglists 
-                        for k in kwList]).most_common() if item[1] > 1])
+        # this function requires tagAttr values are lists, not | delimited strings
+        if type(df[tagAttr].iloc[0]) == str:
+            taglists = df[tagAttr].str.split('|')
+        else:
+            taglists = df[tagAttr]
+        if allTagHist is None:
+            allTagHist = dict([item for item in Counter([k for kwList in taglists
+                                                         for k in kwList]).most_common() if item[1] > 1])
     allVals = np.array(list(allTagHist.values()), dtype=float)
     allFreq = dict(zip(allTagHist.keys(), allVals/allVals.sum()))
-    #clusters = df['clusId'].unique()
     clusters = df[clAttr].unique()
     df[clusterName] = ''
     df[topTags] = ''
@@ -138,7 +153,10 @@ def buildClusterNames(df, allTagHist, tagAttr,
         clusRows = df[clAttr] == clus
         nRows = clusRows.sum()
         if nRows > 0:
-            tagHist = Counter([k for tagList in taglists[clusRows] for k in tagList if k in allTagHist])
+            if tag_count_attr is None:
+                tagHist = Counter([k for tagList in taglists[clusRows] for k in tagList if k in allTagHist])
+            else:
+                tagHist = dict([item for item in merge_tag_count_tuples(df.loc[clusRows, tag_count_attr])])
             if wtd:
                 vals = np.array(list(tagHist.values()), dtype=float)
                 freq = dict(zip(tagHist.keys(), vals/vals.sum()))
@@ -221,6 +239,7 @@ def _buildNetworkHelper(df, sim, linksPer=4, outname=None,
 
 
 # build network, linking based on common tags, tag lists in column named tagAttr
+# adds clusters and other attributes
 # color_attr - the attribute to color the nodes by
 # outname - name of xlsx file to output network to
 # nodesname - name of file for nodes csv
@@ -235,7 +254,7 @@ def buildTagNetwork(df, color_attr="Cluster", tagAttr='eKwds', dropCols=[], outn
     print("Building document network")
     df = df.copy()  # so passed-in dataframe is not altered
     # make histogram of tag frequencies, only include tags with > 1 occurence
-    tagHist = dict([item for item in Counter([k for kwList in df[tagAttr] 
+    tagHist = dict([item for item in Counter([k for kwList in df[tagAttr]
                                               for k in kwList]).most_common() if item[1] > 1])
     # filter tags to only include 'active' tags - tags which occur twice or more in the doc set
     df[tagAttr] = df[tagAttr].apply(lambda x: [k for k in x if k in tagHist])
@@ -276,7 +295,7 @@ def buildSimilarityNetwork(df, sim, color_attr="Cluster", outname=None,
 # build link dataframe from matrix where non-zero element is a link
 def matrixToLinkDataFrame(mat, undirected=False, include_weights=True):
     if undirected:  # make symmetric then take upper triangle
-        mat = np.triu(np.maximum(mat, mat.T))   
+        mat = np.triu(np.maximum(mat, mat.T))
     links = np.transpose(np.nonzero(mat))
     linkList = [{'Source': l[0], 'Target': l[1]} for l in links]
     if include_weights:
